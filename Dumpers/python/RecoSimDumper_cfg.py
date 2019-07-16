@@ -18,7 +18,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32( 1 )
                                                                        
 process.source = cms.Source("PoolSource",
     skipEvents = cms.untracked.uint32(0),                       
-    fileNames = cms.untracked.vstring("file:test/step3.root"),
+    fileNames = cms.untracked.vstring("file:test/test_10_updated/EB/step3.root"),
     secondaryFileNames = cms.untracked.vstring()
     ) 
 

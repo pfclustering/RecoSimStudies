@@ -46,7 +46,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/ParticleFlowReco/interface/PFRecHit.h"
-#include "DataFormats/CaloRecHit/interface/CaloCluster.h"
+#include "DataFormats/ParticleFlowReco/interface/PFCluster.h"
 #include "DataFormats/Math/interface/libminifloat.h"
 
 #include "DataFormats/RecoCandidate/interface/RecoCandidate.h"
@@ -116,7 +116,7 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    ebRechitToken_           = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("ebRechitCollection"));
    eeRechitToken_           = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("eeRechitCollection"));
    pfRecHitToken_           = consumes<std::vector<reco::PFRecHit> >(iConfig.getParameter<edm::InputTag>("pfRechitCollection")); 
-   pfClusterToken_          = consumes<std::vector<reco::CaloCluster> >(iConfig.getParameter<edm::InputTag>("pfClusterCollection")); 
+   pfClusterToken_          = consumes<std::vector<reco::PFCluster> >(iConfig.getParameter<edm::InputTag>("pfClusterCollection")); 
    ebSuperClusterToken_     = consumes<std::vector<reco::SuperCluster> >(iConfig.getParameter<edm::InputTag>("ebSuperClusterCollection"));
    eeSuperClusterToken_     = consumes<std::vector<reco::SuperCluster> >(iConfig.getParameter<edm::InputTag>("eeSuperClusterCollection"));
    
@@ -138,6 +138,8 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    //output file, historgrams and trees
    tree                     = iFile->make<TTree>("caloTree","caloTree"); 
 
+   tree->Branch("event", &event, "event/i");
+   tree->Branch("run", &run, "run/i");
    tree->Branch("genParticle_id", &genParticle_id,"genParticle_id/i");
    tree->Branch("genParticle_energy", &genParticle_energy,"genParticle_energy/F");
    tree->Branch("genParticle_pt", &genParticle_pt,"genParticle_pt/F");
@@ -231,6 +233,8 @@ RecoSimDumper::~RecoSimDumper()
 void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 {
 
+   std::cout << "event information run=" << ev.id().run() << " lumiblock=" << ev.id().luminosityBlock() << " event=" << ev.id().event() << std::endl;
+
    //calo geometry
    edm::ESHandle<CaloGeometry> caloGeometry;
    iSetup.get<CaloGeometryRecord>().get(caloGeometry);
@@ -292,7 +296,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
       }
    } 
 
-   edm::Handle<std::vector<reco::CaloCluster> > pfClusters;
+   edm::Handle<std::vector<reco::PFCluster> > pfClusters;
    ev.getByToken(pfClusterToken_, pfClusters);
    if(savePFCluster_) {
       if (!pfClusters.isValid()) {
@@ -319,12 +323,29 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
       }
    } 
 
-   
+   // count gen Particles
+   int Ngen=0;
+   std::cout << "gen particles of status 1 and associated to photons" << std::endl;
+   for(const auto& iGen : *(genParticles.product()))
+   {
+     if( iGen.status()==1 and iGen.pdgId()==22) {
+       Ngen++;
+       std::cout << "Ngen=" << Ngen << " energy=" << iGen.energy() << " phi=" << iGen.phi() << " eta=" << iGen.eta() << std::endl;
+     }
+   }
 
+   //std::cout << "In this event, number of caloParticles " << *(caloParticles.product())->size() 
+   //          << "  number of genParticles of status 1 and associated to photons" << Ngen << std::endl;
+
+   // count caloParticles
+   std::cout << "calo particles all" << std::endl;
+
+   int Ncalo=0;
    for(const auto& iCalo : *(caloParticles.product()))
    {
+       Ncalo++;
+       std::cout << " Ncalo=" << Ncalo << " energy=" << iCalo.energy() << " phi=" << iCalo.phi() << " eta=" << iCalo.eta() << " pdgId=" << iCalo.pdgId() << std::endl;
        if(iCalo.pdgId()!=motherID_ && motherID_!=0) continue; 
-
        //SetBranch values to default
        setDefaultValues(); 
        caloHit_energy.clear();
@@ -366,6 +387,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
        superCluster_energy.clear(); 
        superCluster_eta.clear(); 
        superCluster_phi.clear(); 
+
+       event=ev.id().event();
+       run=ev.id().run();
+
       
        GlobalPoint cell;
 
@@ -600,7 +625,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
                 int pfCluster_index_tmp=0;
                 if(savePFCluster_){
                    for(const auto& iPFCluster : *(pfClusters.product())){
-                       reco::CaloCluster caloBC(iPFCluster);
+                       reco::PFCluster caloBC(iPFCluster);
                        const std::vector<std::pair<DetId,float> > &hitsAndFractions = caloBC.hitsAndFractions();
                        for(unsigned int i = 0; i < hitsAndFractions.size(); i++){
                            if(hitsAndFractions[i].first.rawId() == id.rawId()){      
@@ -687,6 +712,9 @@ void RecoSimDumper::setDefaultValues()
     caloParticle_pt=-1.;
     caloParticle_eta=-1.;
     caloParticle_phi=-1.; 
+
+    run=-1.;
+    event=-1.;
 }
 
 std::map<DetId,float> RecoSimDumper::superClusterXtalInfo(reco::SuperCluster iSC)

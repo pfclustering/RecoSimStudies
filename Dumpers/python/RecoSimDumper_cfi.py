@@ -9,7 +9,7 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     ebRechitCollection                = cms.InputTag("ecalRecHit","EcalRecHitsEB","RECO"),
     eeRechitCollection                = cms.InputTag("ecalRecHit","EcalRecHitsEE","RECO"),
     pfRechitCollection                = cms.InputTag("particleFlowRecHitECAL","","RECO"),
-    pfClusterCollection               = cms.InputTag("particleFlowEGamma","EBEEClusters","RECO"),
+    pfClusterCollection               = cms.InputTag("particleFlowClusterECAL","","RECO"),
     ebSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALBarrel","RECO"), 
     eeSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower","RECO"), 
     

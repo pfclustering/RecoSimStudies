@@ -50,7 +50,7 @@
 #include "DataFormats/HepMCCandidate/interface/GenParticleFwd.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/ParticleFlowReco/interface/PFRecHit.h"
-#include "DataFormats/CaloRecHit/interface/CaloCluster.h"
+#include "DataFormats/ParticleFlowReco/interface/PFCluster.h"
 #include "DataFormats/CaloRecHit/interface/CaloCluster.h"
 #include "DataFormats/Math/interface/libminifloat.h"
 
@@ -129,7 +129,7 @@ class RecoSimDumper : public edm::EDAnalyzer
       edm::EDGetTokenT<EcalRecHitCollection> ebRechitToken_; 
       edm::EDGetTokenT<EcalRecHitCollection> eeRechitToken_; 
       edm::EDGetTokenT<std::vector<reco::PFRecHit>  > pfRecHitToken_; 
-      edm::EDGetTokenT<std::vector<reco::CaloCluster> > pfClusterToken_; 
+      edm::EDGetTokenT<std::vector<reco::PFCluster> > pfClusterToken_; 
       edm::EDGetTokenT<std::vector<reco::SuperCluster> > ebSuperClusterToken_;
       edm::EDGetTokenT<std::vector<reco::SuperCluster> > eeSuperClusterToken_; 
 
@@ -149,7 +149,9 @@ class RecoSimDumper : public edm::EDAnalyzer
       
       // ----------histograms & trees & branches-------------------
       TTree* tree;
-      
+
+      int run;
+      int event;      
       int genParticle_id;
       float genParticle_energy;
       float genParticle_pt;
