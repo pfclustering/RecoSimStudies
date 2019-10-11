@@ -31,6 +31,7 @@ def getOptions():
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doold', dest='doold', help='use old_ version of the scripts', action='store_true', default=False)
   parser.add_argument('--dodebug', dest='dodebug', help='use test_ version of the reco script', action='store_true', default=False)
+  parser.add_argument('--doshort', dest='doshort', help='set 2 hours as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--domedium', dest='domedium', help='set 2 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--dolong', dest='dolong', help='set 3 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--dorereco', dest='dorereco', help='do only step 3 (reconstruction) starting from an existing step2.root', action='store_true', default=False)
@@ -62,7 +63,6 @@ if __name__ == "__main__":
   if opt.dorereco and opt.custominput == None: raise RuntimeError('you must supply the custom input, when running with dorereco activated')
   if opt.dorereco and opt.domultijob: raise RuntimeError('combination not supported, currently cannot re-reco from job run over multiple files')
   if opt.dorereco and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
-  if opt.dorereco and opt.dosavehome: raise RuntimeError('combination not supported, currently cannot re-reco from files saved on home')
 
   ##############################
   # create production directory and logs directory within
@@ -152,7 +152,9 @@ if __name__ == "__main__":
       if infiles[i]!='':
         cpinput_command = 'xrdcp $SEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
         if opt.dosavehome: cpinput_command = 'cp $SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
-        if opt.dorereco: cpinput_command = 'xrdcp $SEPREFIX/{custominput} $WORKDIR/{infile_loc}'.format(custominput=opt.custominput,infile_loc=infiles_loc[i])
+        if opt.dorereco: 
+          if opt.dosavehome: cpinput_command = 'cp {custominput} $WORKDIR/{infile_loc}'.format(custominput=opt.custominput,infile_loc=infiles_loc[i])
+          else:              cpinput_command = 'xrdcp $SEPREFIX/{custominput} $WORKDIR/{infile_loc}'.format(custominput=opt.custominput,infile_loc=infiles_loc[i])
 
       cpoutput_command = 'xrdcp -f {outfile_loc} $SEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
       if opt.dosavehome: cpoutput_command = 'cp {outfile_loc} $SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
@@ -260,6 +262,8 @@ if __name__ == "__main__":
     time = '--time=1-23:59'
   elif opt.dolong:
     time = '--time=2-23:59'
+  elif opt.doshort:
+    time = '--time=0-02:00'
 
   submitter_template = []
 
