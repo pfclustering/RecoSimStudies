@@ -32,7 +32,7 @@ def getOptions():
   parser.add_argument('--doringavg', dest='doringavg', help='apply ring-averaged thresholds', action='store_true', default=False)
   parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
-  parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported)', default=None)
+  parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported), only for multijob production', default=None)
   parser.add_argument('--doold', dest='doold', help='use old_ version of the scripts', action='store_true', default=False)
 
   #parser.add_argument('--dostep3only', dest='dostep3only', help='do only step 3', action='store_true', default=False)
