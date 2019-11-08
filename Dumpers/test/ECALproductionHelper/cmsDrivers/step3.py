@@ -29,6 +29,16 @@ options.register('doRefSeed',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                 "Use reference values for seeding thresholds")
+options.register('doRingAverage',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                "use ring average for pfrh and seeding thresholds")
+options.register('doPU',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                "Use PU configurations")
 options.register('nThr',
                  1,
                  VarParsing.multiplicity.singleton,
@@ -40,8 +50,11 @@ options.parseArguments()
 import FWCore.ParameterSet.Config as cms
 
 from Configuration.Eras.Era_Run3_cff import Run3
-
-process = cms.Process('RECO',Run3)
+if options.doPU==0:
+  process = cms.Process('RECO',Run3)
+else:
+  from Configuration.ProcessModifiers.premix_stage2_cff import premix_stage2 
+  process = cms.Process('RECO',Run3,premix_stage2)
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -128,13 +141,21 @@ process.myCond = EcalTrivialConditionRetriever.clone()
 # prefer these conditions over the globalTag's ones
 process.es_prefer = cms.ESPrefer("EcalTrivialConditionRetriever","myCond")
 
+# choose file from which to load the thresholds
+if options.doRingAverage == 0:
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB.txt")
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE.txt")
+else:
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged.txt")
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged.txt")
+
 ### set all conditions producers to false except those I am interested in
 if options.doRefPfrh == 0:
   process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(options.pfrhMult/2.0)
   process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(options.pfrhMult/3.0)
-  process.myCond.PFRecHitFile = cms.untracked.string("./data/noise/PFRecHitThresholds_EB.txt")
-  process.myCond.PFRecHitFileEE = cms.untracked.string("./data/noise/PFRecHitThresholds_EE.txt")
+  process.myCond.PFRecHitFile =   EB_pfrhthr_file 
+  process.myCond.PFRecHitFileEE = EE_pfrhthr_file
 else: # use the reference values
   process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(False)
 
@@ -142,14 +163,14 @@ if options.doRefSeed == 0:
   process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(options.seedMult/2.0) # PFRHs files are at 2sigma of the noise for |eta|<2.5
   process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(options.seedMult/3.0) #                3sigma of the noise for |eta|>2.5
-  process.myCond.PFSeedingFile = cms.untracked.string("./data/noise/PFRecHitThresholds_EB.txt")
-  process.myCond.PFSeedingFileEE = cms.untracked.string("./data/noise/PFRecHitThresholds_EE.txt")
+  process.myCond.PFSeedingFile =   EB_pfrhthr_file
+  process.myCond.PFSeedingFileEE = EE_pfrhthr_file
 else: # use the reference values
   process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(1.0) 
   process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(1.0) 
-  process.myCond.PFSeedingFile = cms.untracked.string("./data/noise/fixed_SeedingThresholds_EB.txt")
-  process.myCond.PFSeedingFileEE = cms.untracked.string("./data/noise/fixed_SeedingThresholds_EE.txt")
+  process.myCond.PFSeedingFile =   EB_pfrhthr_file
+  process.myCond.PFSeedingFileEE = EE_pfrhthr_file
 
 process.myCond.producedEcalPedestals = cms.untracked.bool(False)
 process.myCond.producedEcalWeights = cms.untracked.bool(False)
