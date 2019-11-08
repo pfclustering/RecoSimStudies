@@ -29,6 +29,7 @@ def getOptions():
   parser.add_argument('--seedmult', type=float, dest='seedmult', help='how many sigma of the noise to use for seeding thresholds', default=3.)
   parser.add_argument('--dorefpfrh', dest='dorefpfrh', help='use reference values for pfrh and gathering thresholds', action='store_true', default=False)
   parser.add_argument('--dorefseed', dest='dorefseed', help='use reference values for seeding thresholds', action='store_true', default=False)
+  parser.add_argument('--doringavg', dest='doringavg', help='apply ring-averaged thresholds', action='store_true', default=False)
   parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
   parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported)', default=None)
@@ -61,7 +62,10 @@ if __name__ == "__main__":
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
   seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
-  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,v=opt.ver,n=opt.nevts)
+  thrLabel = 'Ring' if opt.doringavg else 'Xtal'
+  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,v=opt.ver,n=opt.nevts)
+  dopu = 1 if opt.pu=='wPU' else 0
+  doringavg = 1 if opt.doringavg else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
   dorefseed = 1 if opt.dorefseed else 0
   doflatenergy = 1 if opt.doflatenergy else 0
@@ -112,7 +116,7 @@ if __name__ == "__main__":
   ## find the names first
   step1_driverName = 'step1_{c}_{g}.py'.format(c=opt.ch,g=opt.geo)
   step2_driverName = 'step2_{pu}.py'.format(pu=opt.pu)
-  step3_driverName = 'step3_{pu}.py'.format(pu=opt.pu)
+  step3_driverName = 'step3.py'
   drivers = [step1_driverName, step2_driverName, step3_driverName]
   if opt.doold: drivers=map(lambda x : 'old_' + x, drivers)
   target_drivers = ['step1.py', 'step2.py', 'step3.py']
@@ -164,7 +168,7 @@ if __name__ == "__main__":
   ## other steps  
   step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles)
   step2_cmsRun_add = 'randomizePremix=True' if opt.domultijob else ''
-  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed)
+  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverage={dra}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, dra=doringavg)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   ############################
