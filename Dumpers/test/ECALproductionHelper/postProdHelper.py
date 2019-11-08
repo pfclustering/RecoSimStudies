@@ -3,6 +3,7 @@
 import sys
 import os
 import glob
+import ROOT
 
 def getOptions():
   from argparse import ArgumentParser
@@ -23,7 +24,7 @@ if __name__ == "__main__":
   path = '/pnfs/psi.ch/cms/trivcat/store/user/{u}/EcalProd/{pl}/'.format(u=opt.user,pl=opt.pl)
   expr = 'step3_nj*root'
   # output
-  prepend = 'file:root://t3dcachedb.psi.ch:1094/'
+  prepend = 'root://t3dcachedb.psi.ch:1094/'
   samplefile = '../../data/samples/' + opt.pl + '.txt'
 
   files = [f for f in glob.glob(path + expr)]
@@ -31,12 +32,24 @@ if __name__ == "__main__":
 
   files = map(lambda x: prepend+x, files) 
 
+  valid_files = []
+  # check files are not empty
+  for f in files:
+    rf = ROOT.TNetXNGFile.Open(f, 'r')
+    if rf and rf.GetListOfKeys().Contains('Events'):
+      #print 'file usable'
+      valid_files.append(f)
+    else: 
+      print 'file not usable, will continue'
+      
+  print valid_files
+
   #create outputdir
   os.system('mkdir {}'.format('../outputfiles/dumpedFiles'))
 
   # write sample file with all files per production
   with open(samplefile, 'w') as of:
-    of.write('\n'.join(files))
+    of.write('\n'.join(valid_files))
 
   print ''
   print 'Wrote list of files for production', opt.pl
