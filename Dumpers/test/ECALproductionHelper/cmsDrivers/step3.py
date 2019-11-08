@@ -149,29 +149,32 @@ else:
   EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged.txt")
   EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged.txt")
 
-### set all conditions producers to false except those I am interested in
+### set pfrh thresholds
+process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(True)
+process.myCond.PFRecHitFile =   EB_pfrhthr_file 
+process.myCond.PFRecHitFileEE = EE_pfrhthr_file
+
 if options.doRefPfrh == 0:
-  process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(options.pfrhMult/2.0)
   process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(options.pfrhMult/3.0)
-  process.myCond.PFRecHitFile =   EB_pfrhthr_file 
-  process.myCond.PFRecHitFileEE = EE_pfrhthr_file
 else: # use the reference values
-  process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(False)
+  process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(1.0)
+  process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(1.0)
 
+### set seeding thresholds
+process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
 if options.doRefSeed == 0:
-  process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(options.seedMult/2.0) # PFRHs files are at 2sigma of the noise for |eta|<2.5
   process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(options.seedMult/3.0) #                3sigma of the noise for |eta|>2.5
   process.myCond.PFSeedingFile =   EB_pfrhthr_file
   process.myCond.PFSeedingFileEE = EE_pfrhthr_file
 else: # use the reference values
-  process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
   process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(1.0) 
   process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(1.0) 
-  process.myCond.PFSeedingFile =   EB_pfrhthr_file
-  process.myCond.PFSeedingFileEE = EE_pfrhthr_file
+  process.myCond.PFSeedingFile =   cms.untracked.string("./data/noise/fixed_SeedingThresholds_EB.txt")
+  process.myCond.PFSeedingFileEE = cms.untracked.string("./data/noise/fixed_SeedingThresholds_EE.txt")
 
+### explicitly set to false all other ecal conditions
 process.myCond.producedEcalPedestals = cms.untracked.bool(False)
 process.myCond.producedEcalWeights = cms.untracked.bool(False)
 process.myCond.producedEcalGainRatios = cms.untracked.bool(False)
