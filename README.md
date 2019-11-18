@@ -113,5 +113,3 @@ Run the dumper on a RECO sample. Example of commands are given in Cfg_RecoSimDum
 ```
 cmsRun Cfg_RecoSimDumper_cfg.py outputFile=../test/outputfiles/dumpedFiles/dumped_singlePhoton_5k_EB.root inputFiles=file:../test/outputfiles/singlePhoton_5k_EB/step3.root
 ```
-
-
