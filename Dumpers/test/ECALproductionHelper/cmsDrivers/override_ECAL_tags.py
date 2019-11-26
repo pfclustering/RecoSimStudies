@@ -2,7 +2,7 @@ override_tags = {}
 
 override_tags[2021] = {}
 override_tags[2021]['EcalLaserAPDPNRatiosRcd'] = 'EcalLaserAPDPNRatios_TL180fb_v1_mc'
-override_tags[2021]['EcalPedestalsRcd'] = 'EcalLaserAPDPNRatios_TL180fb_v1_mc'
+override_tags[2021]['EcalPedestalsRcd'] = 'EcalPedestals_TL180fb_Model190fb_mc'
 override_tags[2021]['EcalSRSettingsRcd'] = 'EcalSRSettings_TL180fb_v1_mc'
 override_tags[2021]['EcalIntercalibConstantsRcd'] = 'EcalIntercalibConstants_TL180fb_v1_mc'
 override_tags[2021]['EcalIntercalibConstantsMCRcd'] = 'EcalIntercalibConstantsMC_TL180fb_v1_mc'
