@@ -4,18 +4,18 @@
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: step2 --conditions auto:phase1_2017_realistic -s DIGI:pdigi_valid,L1,DIGI2RAW,HLT:@relval2017 --datatier GEN-SIM-DIGI-RAW -n 10 --geometry DB:Extended --era Run2_2017 --eventcontent FEVTDEBUGHLT --filein file:step1.root --fileout file:step2.root
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as VarParsing
+from FWCore.ParameterSet.VarParsing import VarParsing
 
-options = VarParsing.VarParsing('standard')
+options = VarParsing('standard')
 options.register('nThr',
                  1,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                 "Number of threads")
 options.register('year',
                  2021,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                  "year of data-taking")
 
 from Configuration.Eras.Era_Run3_cff import Run3
@@ -104,6 +104,13 @@ if options.year == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
 elif options.year == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
+
+# override ECAL tags
+process.GlobalTag.toGet = cms.VPSet()
+from override_ECAL_tags import override_tags
+for rec,tag in override_tags[options.year].items():
+  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+
 
 # Path and EndPath definitions
 process.digitisation_step = cms.Path(process.pdigi)

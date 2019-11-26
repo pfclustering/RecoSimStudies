@@ -4,63 +4,63 @@
 # Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
 # with command line options: SingleGammaPt35_pythia8_cfi --conditions auto:phase1_2017_realistic -n 10 --era Run2_2017 --eventcontent FEVTDEBUG --relval 9000,50 -s GEN,SIM --datatier GEN-SIM --beamspot Realistic25ns13TeVEarly2017Collision --geometry DB:Extended --fileout file:step1.root
 import FWCore.ParameterSet.Config as cms
-import FWCore.ParameterSet.VarParsing as VarParsing
+from FWCore.ParameterSet.VarParsing import VarParsing
 
-options = VarParsing.VarParsing('standard')
+options = VarParsing('standard')
 options.register('etmin',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "ET or E min depending on doFlatEnergy")
 options.register('etmax',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "ET or E max depending on doFlatEnergy")
 options.register('rmin',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "Radius min")
 options.register('rmax',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "Radius max")
 options.register('zmin',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "Z min")
 options.register('zmax',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.float,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.float,
                 "Zmax")
 options.register('np',
                  1,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                 "Number of Particles")
 options.register('nThr',
                  1,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                 "Number of threads")
 options.register('seedOffset',
                  1,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                  "Seed offset")
 options.register('doFlatEnergy',
                  0,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                  "generate flat in energy, otherwise flat in pt")
 options.register('year',
                  2021,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                  "year of data-taking")
 
 options.parseArguments()
@@ -130,14 +130,13 @@ process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2021_realistic_v5', '')
 
-#_ecal_tags = []
+# override ECAL tags
 process.GlobalTag.toGet = cms.VPSet()
 from override_ECAL_tags import override_tags
 for rec,tag in override_tags[options.year].items():
-  #_ecal_tags.append( 
-  #    cms.PSet(record = cms.string(rec), tag = cms.string(tag) ) 
-  #    )
   process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+  #print rec,tag
+  #print process.GlobalTag.toGet[0]
 
 process.generator = cms.EDProducer("CloseByParticleMultiGunProducer",
     PGunParameters = cms.PSet(

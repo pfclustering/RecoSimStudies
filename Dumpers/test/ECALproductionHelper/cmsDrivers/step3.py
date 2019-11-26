@@ -29,11 +29,16 @@ options.register('doRefSeed',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                 "Use reference values for seeding thresholds")
-options.register('doRingAverage',
+options.register('doRingAverageEB',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                "use ring average for pfrh and seeding thresholds")
+                "use ring average for pfrh and seeding thresholds for EB")
+options.register('doRingAverageEE',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                "use ring average for pfrh and seeding thresholds for EE")
 options.register('doPU',
                  0,
                  VarParsing.multiplicity.singleton,
@@ -46,8 +51,8 @@ options.register('nThr',
                 "Number of threads")
 options.register('year',
                  2021,
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.int,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
                  "year of data-taking")
 
 
@@ -144,6 +149,12 @@ if options.year == 2021:
 elif options.year == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 
+# override ECAL tags
+process.GlobalTag.toGet = cms.VPSet()
+from override_ECAL_tags import override_tags
+for rec,tag in override_tags[options.year].items():
+  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+
 # override a global tag with the conditions from external module
 from CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_cfi import *
 process.myCond = EcalTrivialConditionRetriever.clone()
@@ -151,12 +162,15 @@ process.myCond = EcalTrivialConditionRetriever.clone()
 process.es_prefer = cms.ESPrefer("EcalTrivialConditionRetriever","myCond")
 
 # choose file from which to load the thresholds
-if options.doRingAverage == 0:
-  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB.txt")
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE.txt")
+if options.doRingAverageEB == 0:
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.year))
 else:
-  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged.txt")
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged.txt")
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged_{y}.txt".format(y=options.year))
+
+if options.doRingAverageEE == 0:
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.year))
+else:
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_{y}.txt".format(y=options.year))
 
 ### set pfrh thresholds
 process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(True)
