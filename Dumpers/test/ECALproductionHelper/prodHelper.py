@@ -77,7 +77,6 @@ if __name__ == "__main__":
      or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(opt.year))) \
      or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(opt.year))) \
      or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))): 
-     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))) \
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
