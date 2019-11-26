@@ -57,6 +57,11 @@ options.register('doFlatEnergy',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
                  "generate flat in energy, otherwise flat in pt")
+options.register('year',
+                 2021,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "year of data-taking")
 
 options.parseArguments()
 print options
@@ -124,6 +129,15 @@ process.XMLFromDBSource.label = cms.string("Extended")
 process.genstepfilter.triggerConditions=cms.vstring("generation_step")
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2021_realistic_v5', '')
+
+#_ecal_tags = []
+process.GlobalTag.toGet = cms.VPSet()
+from override_ECAL_tags import override_tags
+for rec,tag in override_tags[options.year].items():
+  #_ecal_tags.append( 
+  #    cms.PSet(record = cms.string(rec), tag = cms.string(tag) ) 
+  #    )
+  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
 
 process.generator = cms.EDProducer("CloseByParticleMultiGunProducer",
     PGunParameters = cms.PSet(

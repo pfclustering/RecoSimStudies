@@ -12,7 +12,7 @@ def getOptions():
 
   parser.add_argument('-v','--ver', type=str, dest='ver', help='version of production, e.g. V00_v00', default='V00_v00')
   #parser.add_argument('-r','--rel', type=str, dest='rel', help='cmssw release', default='10_6_1_patch1')
-  #parser.add_argument(     '--gt',      type=str, dest='gt', help='global tag', default='')
+  parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
   parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon'])
@@ -63,7 +63,7 @@ if __name__ == "__main__":
   pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
   seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
   thrLabel = 'Ring' if opt.doringavg else 'Xtal'
-  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,v=opt.ver,n=opt.nevts)
+  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
   doringavg = 1 if opt.doringavg else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
@@ -160,15 +160,15 @@ if __name__ == "__main__":
     if opt.npart!=None:
       npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe}'.format(
-                    jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy)
+    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y}'.format(
+                    jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   else:
     raise RuntimeError('this option is not currently supported')
   ## other steps  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles)
+  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf} year={y}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles, y=opt.year)
   step2_cmsRun_add = 'randomizePremix=True' if opt.domultijob else ''
-  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverage={dra}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, dra=doringavg)
+  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverage={dra} year={y}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, dra=doringavg, y=opt.year)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   ############################

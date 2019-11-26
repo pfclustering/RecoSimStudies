@@ -139,9 +139,9 @@ process.mix.digitizers = cms.PSet()
 for a in process.aliases: delattr(process, a)
 process.RandomNumberGeneratorService.restoreStateLabel=cms.untracked.string("randomEngineStateProducer")
 from Configuration.AlCa.GlobalTag import GlobalTag
-if year == 2021:
+if options.year == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
-elif year == 2023:
+elif options.year == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 
 # override a global tag with the conditions from external module
