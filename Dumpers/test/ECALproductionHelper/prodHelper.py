@@ -63,7 +63,9 @@ if __name__ == "__main__":
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
   seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
-  thrLabel = 'RingEB' if opt.doringavgEB else 'XtalEB' + 'RingEE' if opt.doringavgEE else 'XtalEE'
+  thrLabelEB = 'RingEB' if opt.doringavgEB else 'XtalEB' 
+  thrLabelEE = 'RingEE' if opt.doringavgEE else 'XtalEE'
+  thrLabel = thrLabelEB + thrLabelEE
   prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
   doringavgEB = 1 if opt.doringavgEB else 0
@@ -73,8 +75,9 @@ if __name__ == "__main__":
   if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(opt.year))) \
      or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(opt.year))) \
      or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(opt.year))) \
+     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))): 
      or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))) \
-     or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
+  #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
   nthr = 8 if opt.domultithread else 1
