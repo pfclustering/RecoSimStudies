@@ -47,6 +47,7 @@ def getOptions():
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
+  parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
 
@@ -80,6 +81,7 @@ if __name__ == "__main__":
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
+  dodefaultecaltags = 1 if opt.dodefaultecaltags else 0
   nthr = 8 if opt.domultithread else 1
   njobs = opt.njobs if opt.domultijob else 1
   if opt.domultijob and opt.njobs <= 1: raise RuntimeError('when running multiple jobs, the number of parallel jobs should be larger than 1')
@@ -176,15 +178,14 @@ if __name__ == "__main__":
     if opt.npart!=None:
       npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y}'.format(
-                    jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year)
+    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   else:
     raise RuntimeError('this option is not currently supported')
   ## other steps  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf} year={y}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles, y=opt.year)
+  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles, y=opt.year, ddet=dodefaultecaltags)
   step2_cmsRun_add = 'randomizePremix=True' if opt.domultijob else ''
-  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year)
+  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   ############################

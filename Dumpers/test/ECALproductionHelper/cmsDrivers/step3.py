@@ -54,6 +54,11 @@ options.register('year',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "year of data-taking")
+options.register('doDefaultECALtags',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                 "use default ECAL tags in GT, except for PFRH tag")
 
 
 options.parseArguments()
@@ -149,11 +154,15 @@ if options.year == 2021:
 elif options.year == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 
-# override ECAL tags
-process.GlobalTag.toGet = cms.VPSet()
-from override_ECAL_tags import override_tags
-for rec,tag in override_tags[options.year].items():
-  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+# Override ECAL tags
+if options.doDefaultECALtags == 0:
+  print 'Will override following ECAL tags'
+  process.GlobalTag.toGet = cms.VPSet()
+  from override_ECAL_tags import override_tags
+  for rec,tag in override_tags[options.year].items():
+    process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+    print rec,tag
+    #print process.GlobalTag.toGet[0]
 
 # override a global tag with the conditions from external module
 from CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_cfi import *
