@@ -12,6 +12,11 @@ options.register('nThr',
                  VarParsing.VarParsing.multiplicity.singleton,
                  VarParsing.VarParsing.varType.int,
                 "Number of threads")
+options.register('year',
+                 2021,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "year of data-taking")
 
 from Configuration.Eras.Era_Run3_cff import Run3
 
@@ -95,7 +100,10 @@ process.RAWSIMEventContent.outputCommands.extend(['keep *_mix_MergedCaloTruth_*'
 # Other statements
 process.mix.digitizers = cms.PSet(process.theDigitizersValid)
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
+if year == 2021:
+  process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
+elif year == 2021:
+  process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 
 # Path and EndPath definitions
 process.digitisation_step = cms.Path(process.pdigi)

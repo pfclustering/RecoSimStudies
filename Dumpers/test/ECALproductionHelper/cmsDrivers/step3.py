@@ -44,6 +44,12 @@ options.register('nThr',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                 "Number of threads")
+options.register('year',
+                 2021,
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.int,
+                 "year of data-taking")
+
 
 options.parseArguments()
 
@@ -133,7 +139,10 @@ process.mix.digitizers = cms.PSet()
 for a in process.aliases: delattr(process, a)
 process.RandomNumberGeneratorService.restoreStateLabel=cms.untracked.string("randomEngineStateProducer")
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
+if year == 2021:
+  process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
+elif year == 2023:
+  process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 
 # override a global tag with the conditions from external module
 from CalibCalorimetry.EcalTrivialCondModules.EcalTrivialCondRetriever_cfi import *
