@@ -17,7 +17,7 @@ def getOptions():
 
 
 if __name__ == "__main__":
-
+  
   opt = getOptions()
 
   # input 
@@ -54,9 +54,10 @@ if __name__ == "__main__":
   print ''
   print 'Wrote list of files for production', opt.pl
   print ''
-
+  
   # write cmsRun command to launch
   command = 'cmsRun python/Cfg_RecoSimDumper_cfg.py outputFile=test/outputfiles/dumpedFiles/{pl}.root inputFiles_load=data/samples/{pl}.txt'.format(pl=opt.pl)
+    
   print 'Command to run for production', opt.pl
   print ''
   print command

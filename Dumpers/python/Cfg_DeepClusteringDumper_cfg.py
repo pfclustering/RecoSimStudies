@@ -2,17 +2,18 @@ import FWCore.ParameterSet.Config as cms
 import FWCore.Utilities.FileUtils as FileUtils
 import FWCore.ParameterSet.VarParsing as VarParsing
 
-options = VarParsing.VarParsing('standard')
-options.register('inputFile',
-                 'test/step3.root',
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.string,
-                "inputFile")
-options.register('outputFile',
-                 'output.root',
-                 VarParsing.VarParsing.multiplicity.singleton,
-                 VarParsing.VarParsing.varType.string,
-                "outputFile")
+options = VarParsing.VarParsing('analysis')
+#options = VarParsing.VarParsing('standard')
+#options.register('inputFile',
+#                 'test/step3.root',
+#                 VarParsing.VarParsing.multiplicity.singleton,
+#                 VarParsing.VarParsing.varType.string,
+#                "inputFile")
+#options.register('outputFile',
+#                 'output.root',
+#                 VarParsing.VarParsing.multiplicity.singleton,
+#                 VarParsing.VarParsing.varType.string,
+#                "outputFile")
                 
 options.parseArguments()
 
@@ -33,9 +34,17 @@ process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32( 1 )
                                                                        
 process.source = cms.Source("PoolSource",
     skipEvents = cms.untracked.uint32(0),                       
-    fileNames = cms.untracked.vstring("file:"+options.inputFile),
-    secondaryFileNames = cms.untracked.vstring()
-    ) 
+    fileNames = cms.untracked.vstring(options.inputFiles),
+    secondaryFileNames = cms.untracked.vstring(),
+    duplicateCheckMode = cms.untracked.string("noDuplicateCheck")
+) 
+#process.source = cms.Source("PoolSource",
+#    skipEvents = cms.untracked.uint32(0),                       
+#    fileNames = cms.untracked.vstring (options.inputFiles),
+#    secondaryFileNames = cms.untracked.vstring(),
+#    duplicateCheckMode = cms.untracked.string("noDuplicateCheck")
+#) 
+
 
 process.load('RecoSimStudies.Dumpers.DeepClusteringDumper_cfi')
 
