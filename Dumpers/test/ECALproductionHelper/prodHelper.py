@@ -12,7 +12,7 @@ def getOptions():
 
   parser.add_argument('-v','--ver', type=str, dest='ver', help='version of production, e.g. V00_v00', default='V00_v00')
   #parser.add_argument('-r','--rel', type=str, dest='rel', help='cmssw release', default='10_6_1_patch1')
-  #parser.add_argument(     '--gt',      type=str, dest='gt', help='global tag', default='')
+  parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
   parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon'])
@@ -29,7 +29,8 @@ def getOptions():
   parser.add_argument('--seedmult', type=float, dest='seedmult', help='how many sigma of the noise to use for seeding thresholds', default=3.)
   parser.add_argument('--dorefpfrh', dest='dorefpfrh', help='use reference values for pfrh and gathering thresholds', action='store_true', default=False)
   parser.add_argument('--dorefseed', dest='dorefseed', help='use reference values for seeding thresholds', action='store_true', default=False)
-  parser.add_argument('--doringavg', dest='doringavg', help='apply ring-averaged thresholds', action='store_true', default=False)
+  parser.add_argument('--doringavgEB', dest='doringavgEB', help='apply ring-averaged thresholds in EB', action='store_true', default=False)
+  parser.add_argument('--doringavgEE', dest='doringavgEE', help='apply ring-averaged thresholds in EE', action='store_true', default=False)
   parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
   parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported), only for multijob production', default=None)
@@ -46,6 +47,7 @@ def getOptions():
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
+  parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
 
@@ -62,13 +64,23 @@ if __name__ == "__main__":
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
   seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
-  thrLabel = 'Ring' if opt.doringavg else 'Xtal'
-  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,v=opt.ver,n=opt.nevts)
+  thrLabelEB = 'RingEB' if opt.doringavgEB else 'XtalEB' 
+  thrLabelEE = 'RingEE' if opt.doringavgEE else 'XtalEE'
+  thrLabel = thrLabelEB + thrLabelEE
+  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
-  doringavg = 1 if opt.doringavg else 0
+  doringavgEB = 1 if opt.doringavgEB else 0
+  doringavgEE = 1 if opt.doringavgEE else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
   dorefseed = 1 if opt.dorefseed else 0
+  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(opt.year))) \
+     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(opt.year))) \
+     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(opt.year))) \
+     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))): 
+  #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
+    raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
+  dodefaultecaltags = 1 if opt.dodefaultecaltags else 0
   nthr = 8 if opt.domultithread else 1
   njobs = opt.njobs if opt.domultijob else 1
   if opt.domultijob and opt.njobs <= 1: raise RuntimeError('when running multiple jobs, the number of parallel jobs should be larger than 1')
@@ -133,6 +145,11 @@ if __name__ == "__main__":
     command = 'cp cmsDrivers/{idr} {d}/{td}'.format(idr=idriver,d=prodDir,td=target_drivers[i])
     os.system(command) 
 
+  ## also copy the file containing the conditions
+  tag_filename = 'override_ECAL_tags.py'
+  command = 'cp cmsDrivers/{tf} {d}/.'.format(tf=tag_filename,d=prodDir)
+  os.system(command)
+
   ############################
   # write the cmsRun commands for all steps
   ############################
@@ -145,14 +162,14 @@ if __name__ == "__main__":
       zmax = 304.5
       npart = 10
     elif opt.det == 'EEclose':
-      rmin = 87.4
+      rmin = 58.0
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
       npart = 10
     elif opt.det == 'EEfar':
       rmin = 31.6
-      rmax = 87.4
+      rmax = 58.0
       zmin = 317.0
       zmax = 317.0
       npart = 10
@@ -160,15 +177,14 @@ if __name__ == "__main__":
     if opt.npart!=None:
       npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe}'.format(
-                    jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy)
+    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   else:
     raise RuntimeError('this option is not currently supported')
   ## other steps  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles)
+  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles, y=opt.year, ddet=dodefaultecaltags)
   step2_cmsRun_add = 'randomizePremix=True' if opt.domultijob else ''
-  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverage={dra}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, dra=doringavg)
+  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   ############################
@@ -245,9 +261,10 @@ if __name__ == "__main__":
       '',
 
       #### copy driver and other aux files 
-      'echo "Going to copy cms driver"',
+      'echo "Going to copy cms driver and aux files"',
       'cp $JOBOPFILENAME $WORKDIR/$JOBOPFILENAME',
       '{cpaux}',
+      'cp {tf} $WORKDIR/.',
       'echo ""',
       '',
 
@@ -288,7 +305,7 @@ if __name__ == "__main__":
       template = '\n'.join(template)
       template = template.format(ind=prodLabel,od=outputDir,jo=target_drivers[i],mkdir=mkdiroutput_command,
                                  #cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+nthr+1),cpaux=cpaux_command) 
-                                 cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+1),cpaux=cpaux_command) 
+                                 cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+1),cpaux=cpaux_command,tf=tag_filename) 
 
       launcherFile = '{}/launch_{}.sh'.format(prodDir,outfiles[i].format(nj=nj).split('.root')[0])
       with open(launcherFile, 'w') as f:
