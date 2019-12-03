@@ -59,9 +59,8 @@ options.register('doDefaultECALtags',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "use default ECAL tags in GT, except for PFRH tag")
-
-
 options.parseArguments()
+print options
 
 import FWCore.ParameterSet.Config as cms
 
