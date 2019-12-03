@@ -162,14 +162,19 @@ if __name__ == "__main__":
       zmax = 304.5
       npart = 10
     elif opt.det == 'EEclose':
-      rmin = 58.0
+      #rmin = 58.0 # eta=2.0
+      rmin = 71.1 # eta=2.2
+      #rmin = 87.4 # eta=2.4
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
       npart = 10
     elif opt.det == 'EEfar':
       rmin = 31.6
-      rmax = 58.0
+      #rmax = 58.0 # eta=2.0
+      rmax = 71.1 # eta=2.2
+      #rmax = 87.4 # eta=2.4
+      rmax = 87.4
       zmin = 317.0
       zmax = 317.0
       npart = 10
@@ -182,8 +187,8 @@ if __name__ == "__main__":
   else:
     raise RuntimeError('this option is not currently supported')
   ## other steps  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} nPremixFiles={npf} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, npf=npremixfiles, y=opt.year, ddet=dodefaultecaltags)
-  step2_cmsRun_add = 'randomizePremix=True' if opt.domultijob else ''
+  step2_cmsRun = 'cmsRun {jo} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+  step2_cmsRun_add = ('nPremixFiles={npf}'.format(npf=npremixfiles) if dopu else '') + ('randomizePremix=True' if opt.domultijob and dopu else '')
   step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']

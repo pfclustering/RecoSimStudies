@@ -22,6 +22,8 @@ options.register('doDefaultECALtags',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "use default ECAL tags in GT, except for PFRH tag")
+options.parseArguments()
+print options
 
 from Configuration.Eras.Era_Run3_cff import Run3
 
@@ -109,6 +111,8 @@ if options.year == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
 elif options.year == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
+else: 
+  raise RuntimeError('Global tag not set properly, check logic')
 
 # Override ECAL tags
 if options.doDefaultECALtags == 0:

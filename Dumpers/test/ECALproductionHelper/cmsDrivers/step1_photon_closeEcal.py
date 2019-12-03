@@ -67,7 +67,6 @@ options.register('doDefaultECALtags',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "use default ECAL tags in GT, except for PFRH tag")
-
 options.parseArguments()
 print options
 
