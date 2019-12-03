@@ -162,14 +162,19 @@ if __name__ == "__main__":
       zmax = 304.5
       npart = 10
     elif opt.det == 'EEclose':
-      rmin = 58.0
+      #rmin = 58.0 # eta=2.0
+      rmin = 71.1 # eta=2.2
+      #rmin = 87.4 # eta=2.4
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
       npart = 10
     elif opt.det == 'EEfar':
       rmin = 31.6
-      rmax = 58.0
+      #rmax = 58.0 # eta=2.0
+      rmax = 71.1 # eta=2.2
+      #rmax = 87.4 # eta=2.4
+      rmax = 87.4
       zmin = 317.0
       zmax = 317.0
       npart = 10
