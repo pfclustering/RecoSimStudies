@@ -153,6 +153,8 @@ if options.year == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
 elif options.year == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
+else:
+  raise RuntimeError('Global tag not set properly, check logic')
 
 # Override ECAL tags
 if options.doDefaultECALtags == 0:
