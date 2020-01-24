@@ -59,6 +59,11 @@ options.register('doDefaultECALtags',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "use default ECAL tags in GT, except for PFRH tag")
+options.register ("showerSigmaMult",
+                  1.0,
+                  VarParsing.multiplicity.singleton, 
+                  VarParsing.varType.float,      
+                  "multiplier of shower sigma")
 options.parseArguments()
 print options
 
@@ -287,6 +292,9 @@ else: # use reference values
                gatheringThresholdPt = cms.double(0.0)
                )
   )
+
+if options.showerSigmaMult != 1:
+  process.particleFlowClusterECALUncorrected.pfClusterBuilder.showerSigma = cms.double(1.5*options.showerSigmaMult)
 
 # Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
 from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 
