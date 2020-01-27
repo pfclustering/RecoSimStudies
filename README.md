@@ -98,6 +98,10 @@ python prodHelper.py --help
 ```
 Example commands in ```Dumpers/test/ECALproductionHelper/README.md```
 
+To resubmit jobs that failed for step 3:
+```
+python resubmitHelper.py --help
+```
 After production is over, you can run post-production to create list of files and cmsRun command for next step
 ```
 python postProdHelper.py --help
