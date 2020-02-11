@@ -15,9 +15,9 @@ def getOptions():
   parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
-  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon'])
-  parser.add_argument('--etmax', type=int, dest='etmax', help='max Et (GeV)', default=100)
-  parser.add_argument('--etmin', type=float, dest='etmin', help='min Et (GeV)', default=1)
+  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM'])
+  parser.add_argument('--etmax', type=str, dest='etmax', help='max Et (GeV)', default='100')
+  parser.add_argument('--etmin', type=str, dest='etmin', help='min Et (GeV)', default='1')
   parser.add_argument('--doflatenergy', dest='doflatenergy', help='generate flat in energy, otherwise in pt', action='store_true', default=False)
   parser.add_argument('--npart', type=int, dest='npart', help='number of particles to generate per event for closeEcal configuration, specify only if you want to override the default', default=None)
   parser.add_argument('-g','--geo',type=str, dest='geo', help='detector configuration: wTk, noTk, closeEcal', default='closeEcal', choices=['wTk', 'noTk', 'closeEcal'])
@@ -34,6 +34,7 @@ def getOptions():
   parser.add_argument('--showersigmamult', type=float, dest='showersigmamult', help='how large do you want the shower sigma', default=1.)
   parser.add_argument('--maxsigmadist', type=float, dest='maxsigmadist', help='max RH-cl distance in PFClustering, in units of sigma', default=10.)
   parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
+  parser.add_argument('--dorecofromeos', dest='dorecofromeos', help='do reconstruction from existing production on eos', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
   parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported), only for multijob production', default=None)
   parser.add_argument('--doold', dest='doold', help='use old_ version of the scripts', action='store_true', default=False)
@@ -84,17 +85,33 @@ if __name__ == "__main__":
   doflatenergy = 1 if opt.doflatenergy else 0
   dodefaultecaltags = 1 if opt.dodefaultecaltags else 0
   nthr = 8 if opt.domultithread else 1
-  njobs = opt.njobs if opt.domultijob else 1
   if opt.domultijob and opt.njobs <= 1: raise RuntimeError('when running multiple jobs, the number of parallel jobs should be larger than 1')
-  if opt.domultijob and opt.nevts % opt.njobs != 0: raise RuntimeError('cannot split events in njobs evenly, please change njobs / nevts')
+  if opt.domultijob and opt.nevts % opt.njobs != 0 and not opt.dorecofromeos: raise RuntimeError('cannot split events in njobs evenly, please change njobs / nevts')
+  njobs = opt.njobs if opt.domultijob else 1
   nevtsjob = opt.nevts if not opt.domultijob else opt.nevts/opt.njobs
   nevtspremixfile = 600 # current number of events in each premixed file
   npremixfiles = nevtsjob / nevtspremixfile + 1
   if opt.doreco and opt.custominput == None and opt.custominputdir == None: raise RuntimeError('you must supply the custom input, when running with doreco activated')
   if opt.doreco and not opt.domultijob and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
-  if opt.doreco and opt.domultijob and not os.path.isdir(opt.custominputdir): raise RuntimeError('custominputdir {} not found').format(opt.custominputdir)
-  if opt.doreco and opt.domultijob: print 'A gentle reminder that if you are running with doreco and domultijob activated, you should use the same job splitting that was used for the original production'
-  #if opt.doreco and opt.domultijob: raise RuntimeError('combination not supported, currently cannot re-reco from job run over multiple files')
+  if opt.doreco and not opt.dorecofromeos and opt.domultijob and not os.path.isdir(opt.custominputdir): raise RuntimeError('custominputdir {} not found').format(opt.custominputdir)
+  if opt.doreco and not opt.dorecofromeos and opt.domultijob: print 'A gentle reminder that if you are running with doreco and domultijob activated, you should use the same job splitting that was used for the original production'
+  if not opt.doreco and opt.dorecofromeos: raise RuntimeError('You have to activate doreco option in order to run dorecofromeos')
+  # special configurations for opt.dorecofromeos
+  inseprefix = 'root://t3dcachedb.psi.ch:1094/'
+  outseprefix = 'root://t3dcachedb.psi.ch:1094/'
+  if opt.dorecofromeos:
+    inseprefix='root://eoscms.cern.ch/'
+    # check directory exists
+    command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
+    out = subprocess.check_output(command, shell=True) # if not a dir, there will be an exception
+    files=out.split('\n')[0:-1] # get the list of files
+    if not files: raise RuntimeError('files not found')
+    alljobids = map(lambda x: int(x.split('_job')[1].split('_step2')[0]), files) # isolate the job number
+    njobs = max(alljobids)
+    print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
+    if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
+    neventsjob = -1 # TODO: check that this works      
+    
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
     time2=opt.time.split(',')[1]
@@ -138,6 +155,8 @@ if __name__ == "__main__":
   infiles_loc = ['', 'step1.root', 'step2.root']
   outfiles = ['step1_nj{nj}.root', 'step2_nj{nj}.root', 'step3_nj{nj}.root']
   outfiles_loc = ['step1.root', 'step2.root', 'step3.root']
+  if opt.dorecofromeos: 
+    infiles = ['', '', 'cluster_job{nj}_step2.root']
 
   ## copy them to dir
   for i,idriver in enumerate(drivers):
@@ -184,8 +203,11 @@ if __name__ == "__main__":
     if opt.npart!=None:
       npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=opt.etmin, etmax=opt.etmax, r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
+  elif opt.doreco:
+    step1_cmsRun = 'dummy'
+    step1_cmsRun_add = 'dummy'
   else:
     raise RuntimeError('this option is not currently supported')
   ## other steps  
@@ -212,14 +234,14 @@ if __name__ == "__main__":
 
       cpinput_command = ''
       if infiles[i]!='':
-        cpinput_command = 'xrdcp $SEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
+        cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
         if opt.dosavehome: cpinput_command = 'cp $SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
         if opt.doreco: 
-          custominput = opt.custominput if not opt.domultijob else opt.custominputdir + '/step2_nj{nj}.root'.format(nj=nj) # could have used also infiles[i].format(nj=nj)
+          custominput = opt.custominput if not opt.domultijob else opt.custominputdir + '/' + infiles[i].format(nj=nj) 
           if opt.dosavehome: cpinput_command = 'cp {ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
-          else:              cpinput_command = 'xrdcp $SEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
+          else:              cpinput_command = 'xrdcp $INSEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
 
-      cpoutput_command = 'xrdcp -f {outfile_loc} $SEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
+      cpoutput_command = 'xrdcp -f {outfile_loc} $OUTSEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
       if opt.dosavehome: cpoutput_command = 'cp {outfile_loc} $SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
        
       cpaux_command = ''
@@ -237,7 +259,8 @@ if __name__ == "__main__":
       'TOPWORKDIR="/scratch/"$USER/',
       'JOBDIR="gen_"$SLURM_JOB_ID',
       'WORKDIR=$TOPWORKDIR/$JOBDIR',
-      'SEPREFIX="root://t3dcachedb.psi.ch:1094/"',
+      'INSEPREFIX="{isepx}"',
+      'OUTSEPREFIX="{osepx}"',
       'SERESULTDIR={od}/$DIRNAME',
       'JOBOPFILENAME="{jo}"',
       '',
@@ -310,7 +333,7 @@ if __name__ == "__main__":
 
       ] 
       template = '\n'.join(template)
-      template = template.format(ind=prodLabel,od=outputDir,jo=target_drivers[i],mkdir=mkdiroutput_command,
+      template = template.format(ind=prodLabel,od=outputDir,jo=target_drivers[i],mkdir=mkdiroutput_command,isepx=inseprefix,osepx=outseprefix,
                                  #cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+nthr+1),cpaux=cpaux_command) 
                                  cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+1),cpaux=cpaux_command,tf=tag_filename) 
 
