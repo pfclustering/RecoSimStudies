@@ -61,12 +61,17 @@ if __name__ == "__main__":
   if not set_actual.issubset(set_expected): raise RuntimeError('More valid files at previous step, logic error')
   set_missing = set_expected.difference(set_actual)
 
+  if len(set_missing)==0: 
+    print ''
+    print 'No job to be resubmitted for production =', opt.pl 
+    print ''
+    sys.exit()
+
   # now open the submission file and create another one where only the missing jobs are to be resubmitted 
   resubmit_file = open('./{}/resubmit.sh'.format(opt.pl), 'w')
   submit_file = open('./{}/submit.sh'.format(opt.pl), 'r')
 
   for line in submit_file:
-
     if 'jid3' in line:  # only consider resubmission of step3
 
       result = re.search('nj(.*)\=\$',line)
