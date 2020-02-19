@@ -110,7 +110,7 @@ if __name__ == "__main__":
     njobs = max(alljobids)
     print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
     if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
-    neventsjob = -1 # TODO: check that this works      
+    neventsjob = -1 
     
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
