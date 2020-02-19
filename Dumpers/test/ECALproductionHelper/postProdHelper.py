@@ -28,6 +28,7 @@ if __name__ == "__main__":
   samplefile = '../../data/samples/' + opt.pl + '.txt'
 
   files = [f for f in glob.glob(path + expr)]
+  files.sort() # sort in alphabetical order
   if len(files)==0: raise RuntimeError('path {} does not exist or is empty'.format(path))
 
   files = map(lambda x: prepend+x, files) 
@@ -42,7 +43,7 @@ if __name__ == "__main__":
     else: 
       print 'file not usable, will continue'
       
-  print valid_files
+  #print valid_files
 
   #create outputdir
   os.system('mkdir {}'.format('../outputfiles/dumpedFiles'))

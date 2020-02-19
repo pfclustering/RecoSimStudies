@@ -64,6 +64,11 @@ options.register ("showerSigmaMult",
                   VarParsing.multiplicity.singleton, 
                   VarParsing.varType.float,      
                   "multiplier of shower sigma")
+options.register ("maxSigmaDist",
+                  10.0,
+                  VarParsing.multiplicity.singleton, 
+                  VarParsing.varType.float,      
+                  "max RH-cl distance allowed in PFClustering, in units of sigma")
 options.parseArguments()
 print options
 
@@ -97,7 +102,7 @@ process.load('Configuration.StandardSequences.Validation_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(options.maxEvents)
 )
 
 
@@ -295,6 +300,9 @@ else: # use reference values
 
 if options.showerSigmaMult != 1:
   process.particleFlowClusterECALUncorrected.pfClusterBuilder.showerSigma = cms.double(1.5*options.showerSigmaMult)
+
+###MG commented because needs modifications in cmssw 
+###process.particleFlowClusterECALUncorrected.pfClusterBuilder.maxSigmaDist = cms.double(options.maxSigmaDist)
 
 # Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
 from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 
