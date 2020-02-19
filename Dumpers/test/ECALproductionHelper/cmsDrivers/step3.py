@@ -301,7 +301,8 @@ else: # use reference values
 if options.showerSigmaMult != 1:
   process.particleFlowClusterECALUncorrected.pfClusterBuilder.showerSigma = cms.double(1.5*options.showerSigmaMult)
 
-process.particleFlowClusterECALUncorrected.pfClusterBuilder.maxSigmaDist = cms.double(options.maxSigmaDist)
+###MG commented because needs modifications in cmssw 
+###process.particleFlowClusterECALUncorrected.pfClusterBuilder.maxSigmaDist = cms.double(options.maxSigmaDist)
 
 # Automatic addition of the customisation function from SimGeneral.MixingModule.fullMixCustomize_cff
 from SimGeneral.MixingModule.fullMixCustomize_cff import setCrossingFrameOn 

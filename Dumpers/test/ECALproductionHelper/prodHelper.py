@@ -32,7 +32,7 @@ def getOptions():
   parser.add_argument('--doringavgEB', dest='doringavgEB', help='apply ring-averaged thresholds in EB', action='store_true', default=False)
   parser.add_argument('--doringavgEE', dest='doringavgEE', help='apply ring-averaged thresholds in EE', action='store_true', default=False)
   parser.add_argument('--showersigmamult', type=float, dest='showersigmamult', help='how large do you want the shower sigma', default=1.)
-  parser.add_argument('--maxsigmadist', type=float, dest='maxsigmadist', help='max RH-cl distance in PFClustering, in units of sigma', default=10.)
+  parser.add_argument('--maxsigmadist', type=float, dest='maxsigmadist', help='max RH-cl distance in PFClustering, in units of sigma, THIS OPTION CURRENTLY DOES NOTHING', default=10.)
   parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
   parser.add_argument('--dorecofromeos', dest='dorecofromeos', help='do reconstruction from existing production on eos', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
