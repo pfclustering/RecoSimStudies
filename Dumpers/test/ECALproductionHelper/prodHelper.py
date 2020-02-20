@@ -44,7 +44,7 @@ def getOptions():
   parser.add_argument('--domedium', dest='domedium', help='set 2 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--dolong', dest='dolong', help='set 3 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--docustomtime', dest='docustomtime', help='set custom time', action='store_true', default=False)
-  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, example 01,02,01 for 1 hour for step1, 2 for step2, 2 for step3', default='02,02,05')
+  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, including dumper, example 01,02,01,04 for 1 hour for step1, 2 for step2, 1 for step3, 4 for dumper', default='02,02,05,05')
   parser.add_argument('--domultithread', dest='domultithread', help='run multithreaded', action='store_true', default=False)
   parser.add_argument('--domultijob', dest='domultijob', help='run several separate jobs', action='store_true', default=False)
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
@@ -116,7 +116,8 @@ if __name__ == "__main__":
     time1=opt.time.split(',')[0]
     time2=opt.time.split(',')[1]
     time3=opt.time.split(',')[2]
-    times = [time1,time2,time3]
+    timed=opt.time.split(',')[3]
+    times = [time1,time2,time3,timed]
     sbatch_times = map(lambda x: '--time=0-{}:00'.format(x), times)
   else:
     if opt.domedium:
@@ -127,7 +128,7 @@ if __name__ == "__main__":
       time = '--time=0-02:00'
     else:
       time = '--time=1-00:00'
-    sbatch_times = [time, time, time]
+    sbatch_times = [time, time, time, '--time=0-01:00']
 
   ##############################
   # create production directory and logs directory within
@@ -423,7 +424,7 @@ if __name__ == "__main__":
 
   # add the dumper part
   if not opt.doskipdumper:
-    sbatch_command_dumper = 'jid_d=$(sbatch -p wn --account=t3 -o logs/dumper.log -e logs/dumper.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper.sh)'.format(pl=prodLabel,t='--time=0-03:59',dd=dumper_dependencies)
+    sbatch_command_dumper = 'jid_d=$(sbatch -p wn --account=t3 -o logs/dumper.log -e logs/dumper.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper.sh)'.format(pl=prodLabel,t=sbatch_times[3],dd=dumper_dependencies)
     submitter_template.append(sbatch_command_dumper)
     submitter_template.append('echo "$jid_d"')
     submitter_template.append('jid_d=${jid_d#"Submitted batch job "}')
