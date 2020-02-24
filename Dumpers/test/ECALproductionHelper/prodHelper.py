@@ -48,6 +48,7 @@ def getOptions():
   parser.add_argument('--domultithread', dest='domultithread', help='run multithreaded', action='store_true', default=False)
   parser.add_argument('--domultijob', dest='domultijob', help='run several separate jobs', action='store_true', default=False)
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
+  parser.add_argument('--splitfactord', type=int, dest='splitfactord', help='number of jobs for the dumper', default=1)
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
@@ -110,7 +111,7 @@ if __name__ == "__main__":
     njobs = max(alljobids)
     print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
     if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
-    neventsjob = -1 
+    nevtsjob = -1 
     
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
@@ -342,16 +343,14 @@ if __name__ == "__main__":
       with open(launcherFile, 'w') as f:
         f.write(template)
 
-  #############################
-  # write the template script to run the dumper
-  # one template for the full task
-  ############################
   if not opt.doskipdumper:
+    #############################
+    # write the template script to run the postproduction helper (one job for the full task)
+    ############################
  
     # the template should run a python script to get the sample list
-    # and then run the actual cmsRun command for the dumper
     # all done locally
-    template_dumper = [
+    template_postprod = [
       '#!/bin/bash',
       '',
       'STARTDIR=$PWD/../',
@@ -367,15 +366,8 @@ if __name__ == "__main__":
       ### running part
       'echo "Going to run postProdHelper.py"',
       'DATE_START=`date +%s`',
-      'python postProdHelper.py --pl {pl} --user {u}'.format(pl=prodLabel, u=user),
+      'python postProdHelper.py --pl {pl} --user {u} --splitfactord {spd}'.format(pl=prodLabel, u=user, spd=opt.splitfactord),
       'echo ""',
-      '',
-      'echo "Going to run the Dumper"',
-      'if [ "$USER" == "anlyon" ] ; then ',
-        'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}.root inputFiles_load=../../data/samples/{pl}.txt'.format(pl=prodLabel),
-      'else',
-        'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=../../test/outputfiles/{pl}.root inputFiles_load=../../data/samples/{pl}.txt'.format(pl=prodLabel),
-      'fi',
       'DATE_END=`date +%s`',
       'echo ""',
       '',
@@ -385,18 +377,60 @@ if __name__ == "__main__":
       'echo "Wallclock running time: $RUNTIME s"',
     ]
     
-    template_dumper = '\n'.join(template_dumper)
+    template_postprod = '\n'.join(template_postprod)
 
-    launcherFile_dumper = '{}/launch_dumper.sh'.format(prodDir)
-    with open(launcherFile_dumper, 'w') as f:
-      f.write(template_dumper)
+    launcherFile_postprod = '{}/launch_postprod.sh'.format(prodDir)
+    with open(launcherFile_postprod, 'w') as f:
+      f.write(template_postprod)
+
+    #############################
+    # write the template for the dumper
+    ############################
+    
+    for njd in range(0,opt.splitfactord):
+      template_dumper = [
+        '#!/bin/bash',
+        '',
+        'STARTDIR=$PWD/../',
+        #### environment
+        'source $VO_CMS_SW_DIR/cmsset_default.sh',
+        'shopt -s expand_aliases',
+        'echo ""',
+        'echo "Going to set up cms environment"',
+        'cd $STARTDIR',
+        'cmsenv',
+        'echo ""',
+        '',
+        ### running part
+        'echo "Going to run the Dumper"',
+        'DATE_START=`date +%s`',
+        'if [ "$USER" == "anlyon" ] ; then ',
+          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt'.format(pl=prodLabel, njd=njd),
+        'else',
+          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=../../test/outputfiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt'.format(pl=prodLabel, njd=njd),
+        'fi',
+        'DATE_END=`date +%s`',
+        'echo ""',
+        '',
+        ### print job time
+        'echo "Finished running"',
+        'RUNTIME=$((DATE_END-DATE_START))',
+        'echo "Wallclock running time: $RUNTIME s"',
+      ]
+      
+      template_dumper = '\n'.join(template_dumper)
+
+      launcherFile_dumper = '{}/launch_dumper_njd{}.sh'.format(prodDir,njd)
+      with open(launcherFile_dumper, 'w') as f:
+        f.write(template_dumper)
+
 
   #############################
   # finally write the submitter
   ############################# 
   submitter_template = []
 
-  dumper_dependencies = ''
+  postprod_dependencies = ''
 
   for nj in range(0,njobs):
 
@@ -408,7 +442,7 @@ if __name__ == "__main__":
     if opt.doreco: # strip the dependency away
       sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
 
-    dumper_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
+    postprod_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
 
     if not opt.doreco:
       submitter_template.append(sbatch_command_step1)
@@ -422,13 +456,23 @@ if __name__ == "__main__":
     submitter_template.append('echo "$jid3_nj%i"' % nj)
     submitter_template.append('jid3_nj%i=${jid3_nj%i#"Submitted batch job "}' % (nj,nj))
 
-  # add the dumper part
+  # add the postproduction and dumper part
   if not opt.doskipdumper:
-    sbatch_command_dumper = 'jid_d=$(sbatch -p wn --account=t3 -o logs/dumper.log -e logs/dumper.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper.sh)'.format(pl=prodLabel,t=sbatch_times[3],dd=dumper_dependencies)
-    submitter_template.append(sbatch_command_dumper)
-    submitter_template.append('echo "$jid_d"')
-    submitter_template.append('jid_d=${jid_d#"Submitted batch job "}')
-  
+    # post production
+    sbatch_command_postprod = 'jid_pp=$(sbatch -p wn --account=t3 -o logs/postprod.log -e logs/postprod.log --job-name=postprod_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_postprod.sh)'.format(pl=prodLabel,t='--time=0-01:00',dd=postprod_dependencies)
+    submitter_template.append(sbatch_command_postprod)
+    submitter_template.append('echo "$jid_pp"')
+    submitter_template.append('jid_pp=${jid_pp#"Submitted batch job "}')
+    dumper_dependencies = ':$jid_pp'
+    # dumper
+    for njd in range(0, opt.splitfactord):
+      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[3],dd=dumper_dependencies)
+      submitter_template.append(sbatch_command_dumper)
+      submitter_template.append('echo "$jid_njd%i"' % njd)
+      submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (nj,nj))
+   
+
+  # finish ...
   submitter_template = '\n\n'.join(submitter_template)
 
   submitterFile = '{}/submit.sh'.format(prodDir)
