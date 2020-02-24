@@ -469,7 +469,7 @@ if __name__ == "__main__":
       sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[3],dd=dumper_dependencies)
       submitter_template.append(sbatch_command_dumper)
       submitter_template.append('echo "$jid_njd%i"' % njd)
-      submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (nj,nj))
+      submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (njd,njd))
    
 
   # finish ...
