@@ -101,7 +101,7 @@ if __name__ == "__main__":
   # special configurations for opt.dorecofromeos
   inseprefix = 'root://t3dcachedb.psi.ch:1094/'
   outseprefix = 'root://t3dcachedb.psi.ch:1094/'
-  if opt.dorecofromeos:
+  if opt.dorecofromeos and not opt.dodumperonly:
     inseprefix='root://eoscms.cern.ch/'
     # check directory exists
     command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
@@ -395,6 +395,14 @@ if __name__ == "__main__":
         '#!/bin/bash',
         '',
         'STARTDIR=$PWD/../',
+        'TOPWORKDIR="/scratch/"$USER/',
+        'JOBDIR="dump_"$SLURM_JOB_ID',
+        'WORKDIR=$TOPWORKDIR/$JOBDIR',
+        'INSEPREFIX="{isepx}"',
+        'OUTSEPREFIX="{osepx}"',
+        'SERESULTDIR=$OUTSEPREFIX//pnfs/psi.ch/cms/trivcat/store/user/$USER/Dumper/',        
+        '',
+
         #### environment
         'source $VO_CMS_SW_DIR/cmsset_default.sh',
         'shopt -s expand_aliases',
@@ -404,24 +412,42 @@ if __name__ == "__main__":
         'cmsenv',
         'echo ""',
         '',
+
+        #### workdir
+        'echo "Going to create work dir, will contain intermediate output"',
+        'mkdir -p $WORKDIR',
+         'echo "workdir: "',
+        'echo $WORKDIR',
+        'echo ""',
+        '',
+
         ### running part
         'echo "Going to run the Dumper"',
         'DATE_START=`date +%s`',
         'if [ "$USER" == "anlyon" ] ; then ',
-          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt'.format(pl=prodLabel, njd=njd),
+          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
         'else',
-          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=../../test/outputfiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt'.format(pl=prodLabel, njd=njd),
+          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=$WORKDIR/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
         'fi',
-        'DATE_END=`date +%s`',
         'echo ""',
         '',
-        ### print job time
-        'echo "Finished running"',
+
+        ### copy back output
+        'echo "Going to copy the output to the output directory"',
+        'xrdcp -f $WORKDIR/{pl}_njd{njd}.root $SERESULTDIR/{pl}_njd{njd}.root',
+        'DATE_END=`date +%s`',
+        'echo ""',
+
+        #### clean and go 
+        'echo "Cleaning up $WORKDIR"',
+        'rm -rf $WORKDIR',
         'RUNTIME=$((DATE_END-DATE_START))',
         'echo "Wallclock running time: $RUNTIME s"',
+        'cd $STARTDIR',
       ]
       
       template_dumper = '\n'.join(template_dumper)
+      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=inseprefix)
 
       launcherFile_dumper = '{}/launch_dumper_njd{}.sh'.format(prodDir,njd)
       with open(launcherFile_dumper, 'w') as f:
