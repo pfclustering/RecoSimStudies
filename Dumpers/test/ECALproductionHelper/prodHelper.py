@@ -66,6 +66,7 @@ if __name__ == "__main__":
   #############################
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
+  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else 'Cfg_RecoSimDumper_cfg.py'
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
   seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
@@ -425,9 +426,9 @@ if __name__ == "__main__":
         'echo "Going to run the Dumper"',
         'DATE_START=`date +%s`',
         'if [ "$USER" == "anlyon" ] ; then ',
-          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
+          'cmsRun ../../python/{cfg} outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
         'else',
-          'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=$WORKDIR/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
+          'cmsRun ../../python/{cfg} outputFile=$WORKDIR/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
         'fi',
         'echo ""',
         '',
@@ -447,7 +448,7 @@ if __name__ == "__main__":
       ]
       
       template_dumper = '\n'.join(template_dumper)
-      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=inseprefix)
+      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=inseprefix, cfg=dumpcfg)
 
       launcherFile_dumper = '{}/launch_dumper_njd{}.sh'.format(prodDir,njd)
       with open(launcherFile_dumper, 'w') as f:
