@@ -15,7 +15,7 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     rhoTag                            = cms.InputTag("fixedGridRhoFastjetAll","","RECO"), 
     
     doCompression                     = cms.bool(True),  #do the compression of floats
-    nBits                             = cms.int32(15),   #nbits for float compression (<=23)
+    nBits                             = cms.int32(15),   #nbits for float compression (<=23) -> set to N means only N digits after .
 
     saveGenParticles                  = cms.bool(True),  #save genParticles information   
     saveCaloParticles                 = cms.bool(True),  #save caloParticles information
