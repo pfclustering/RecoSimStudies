@@ -15,7 +15,7 @@ def getOptions():
   parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
-  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM'])
+  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD'])
   parser.add_argument('--etmax', type=str, dest='etmax', help='max Et (GeV)', default='100')
   parser.add_argument('--etmin', type=str, dest='etmin', help='min Et (GeV)', default='1')
   parser.add_argument('--doflatenergy', dest='doflatenergy', help='generate flat in energy, otherwise in pt', action='store_true', default=False)
@@ -33,7 +33,7 @@ def getOptions():
   parser.add_argument('--doringavgEE', dest='doringavgEE', help='apply ring-averaged thresholds in EE', action='store_true', default=False)
   parser.add_argument('--showersigmamult', type=float, dest='showersigmamult', help='how large do you want the shower sigma', default=1.)
   parser.add_argument('--maxsigmadist', type=float, dest='maxsigmadist', help='max RH-cl distance in PFClustering, in units of sigma, THIS OPTION CURRENTLY DOES NOTHING', default=10.)
-  parser.add_argument('--doreco', dest='doreco', help='do only step 3 (reconstruction) starting from an existing production', action='store_true', default=False)
+  parser.add_argument('--doreco', dest='doreco', help='do step 3 (reconstruction) and later stages (if any) starting from an existing production', action='store_true', default=False)
   parser.add_argument('--dorecofromeos', dest='dorecofromeos', help='do reconstruction from existing production on eos', action='store_true', default=False)
   parser.add_argument('--custominput', type=str, dest='custominput', help='full path of the input file that you want to use for the reconstruction (also SE is supported)', default=None)
   parser.add_argument('--custominputdir', type=str, dest='custominputdir', help='full path of the input directory that you want to use for the reconstruction (also SE is supported), only for multijob production', default=None)
@@ -70,7 +70,10 @@ if __name__ == "__main__":
   thrLabelEB = 'RingEB' if opt.doringavgEB else 'XtalEB' 
   thrLabelEE = 'RingEE' if opt.doringavgEE else 'XtalEE'
   thrLabel = thrLabelEB + thrLabelEE
-  prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+  if opt.ch != 'QCD':
+    prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+  else:
+    prodLabel='{c}_{pu}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
@@ -117,6 +120,9 @@ if __name__ == "__main__":
     time2=opt.time.split(',')[1]
     time3=opt.time.split(',')[2]
     times = [time1,time2,time3]
+    if opt.ch == 'QCD': 
+      time4=opt.time.split(',')[3]
+      times.append(time4)
     sbatch_times = map(lambda x: '--time=0-{}:00'.format(x), times)
   else:
     if opt.domedium:
@@ -128,6 +134,7 @@ if __name__ == "__main__":
     else:
       time = '--time=1-00:00'
     sbatch_times = [time, time, time]
+    if opt.ch == 'QCD': sbatch_times.append(time)
 
   ##############################
   # create production directory and logs directory within
@@ -144,23 +151,36 @@ if __name__ == "__main__":
   ############################
   # copy the relevant cmsDriver to prod directory
   ############################
-  ## find the names first
-  step1_driverName = 'step1_{c}_{g}.py'.format(c=opt.ch,g=opt.geo)
+  ## find the names first 
+  if opt.ch != 'QCD': 
+    step1_driverName = 'step1_{c}_{g}.py'.format(c=opt.ch,g=opt.geo)
+  else:
+    step1_driverName = 'step1_QCD.py'
   step2_driverName = 'step2_{pu}.py'.format(pu=opt.pu)
   step3_driverName = 'step3.py'
+  step4_driverName = 'step4.py'
   drivers = [step1_driverName, step2_driverName, step3_driverName]
   if opt.doold: drivers=map(lambda x : 'old_' + x, drivers)
   target_drivers = ['step1.py', 'step2.py', 'step3.py']
   infiles  = ['', 'step1_nj{nj}.root', 'step2_nj{nj}.root']
-  infiles_loc = ['', 'step1.root', 'step2.root']
+  infiles_loc = ['', 'step1.root', 'step2.root', 'step3.root']
   outfiles = ['step1_nj{nj}.root', 'step2_nj{nj}.root', 'step3_nj{nj}.root']
   outfiles_loc = ['step1.root', 'step2.root', 'step3.root']
+  
+  if opt.ch == 'QCD':
+   drivers.append(step4_driverName)
+   target_drivers.append('step4.py')
+   infiles.append('step3_nj{nj}.root')
+   infiles_loc.append('step3.root')
+   outfiles.append('step4_nj{nj}.root')
+   outfiles_loc.append('step4.root')
+
   if opt.dorecofromeos: 
     infiles = ['', '', 'cluster_job{nj}_step2.root']
 
   ## copy them to dir
   for i,idriver in enumerate(drivers):
-    if opt.doreco and i!=2: continue # skip everything that is not related to step3
+    if opt.doreco and i<2: continue # skip everything that is not related to step3
     if not os.path.isfile('cmsDrivers/{idr}'.format(idr=idriver)):
       raise RuntimeError('cmsDriver {idr} not found, please check naming'.format(idr=idriver))
     command = 'cp cmsDrivers/{idr} {d}/{td}'.format(idr=idriver,d=prodDir,td=target_drivers[i])
@@ -175,7 +195,7 @@ if __name__ == "__main__":
   # write the cmsRun commands for all steps
   ############################
   ## step1
-  if opt.geo == 'closeEcal':
+  if opt.geo == 'closeEcal' and opt.ch != 'QCD':
     if opt.det == 'EB':
       rmin = 123.8
       rmax = 123.8
@@ -205,23 +225,37 @@ if __name__ == "__main__":
 
     step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
+  elif opt.ch == 'QCD':
+    step1_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   elif opt.doreco:
     step1_cmsRun = 'dummy'
     step1_cmsRun_add = 'dummy'
   else:
     raise RuntimeError('this option is not currently supported')
-  ## other steps  
+  ## step2  
   step2_cmsRun = 'cmsRun {jo} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, y=opt.year, ddet=dodefaultecaltags)
   step2_cmsRun_add = ('nPremixFiles={npf}'.format(npf=npremixfiles) if dopu else '') + (' randomizePremix=1' if opt.domultijob and dopu else ' ')
-  step3_cmsRun = 'cmsRun {jo} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  ## step3
+  if opt.ch != 'QCD':
+    dorecofile=1
+    dominiaodfile=0
+  else:
+    dorecofile=0
+    dominiaodfile=1
+  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
+  if opt.ch == 'QCD':
+    step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags) 
+    cmsRuns.append(step4_cmsRun)
+    cmsRuns_add.append('')
   ############################
   # write the launching scripts
   ############################
   for i,idriver in enumerate(drivers):
 
-    if opt.doreco and i!=2: continue # skip everything that is not related to step3
+    if opt.doreco and i<2: continue # skip everything that is not related to step3
 
     for nj in range(0,njobs):
   
@@ -345,7 +379,7 @@ if __name__ == "__main__":
   # write the template script to run the dumper
   # one template for the full task
   ############################
-  if not opt.doskipdumper:
+  if not opt.doskipdumper and opt.ch != 'QCD':
  
     # the template should run a python script to get the sample list
     # and then run the actual cmsRun command for the dumper
@@ -404,6 +438,10 @@ if __name__ == "__main__":
     sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
 
     sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+   
+    if opt.ch == 'QCD':  
+      sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
+
     if opt.doreco: # strip the dependency away
       sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
 
@@ -420,9 +458,14 @@ if __name__ == "__main__":
     submitter_template.append(sbatch_command_step3)
     submitter_template.append('echo "$jid3_nj%i"' % nj)
     submitter_template.append('jid3_nj%i=${jid3_nj%i#"Submitted batch job "}' % (nj,nj))
-
+    
+    if opt.ch == 'QCD':
+      submitter_template.append(sbatch_command_step4)
+      submitter_template.append('echo "$jid4_nj%i"' % nj)
+      submitter_template.append('jid4_nj%i=${jid4_nj%i#"Submitted batch job "}' % (nj,nj))
+    
   # add the dumper part
-  if not opt.doskipdumper:
+  if not opt.doskipdumper and opt.ch != 'QCD':
     sbatch_command_dumper = 'jid_d=$(sbatch -p wn --account=t3 -o logs/dumper.log -e logs/dumper.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper.sh)'.format(pl=prodLabel,t='--time=0-03:59',dd=dumper_dependencies)
     submitter_template.append(sbatch_command_dumper)
     submitter_template.append('echo "$jid_d"')
