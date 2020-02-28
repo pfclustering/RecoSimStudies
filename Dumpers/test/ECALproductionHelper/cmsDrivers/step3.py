@@ -49,6 +49,11 @@ options.register('doRingAverageEE',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                 "use ring average for pfrh and seeding thresholds for EE")
+options.register('doSafetyMargin',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                "raise value of pfrh and seeding thrs of 10%")
 options.register('doPU',
                  0,
                  VarParsing.multiplicity.singleton,
@@ -278,8 +283,12 @@ process.myCond.PFRecHitFile =   EB_pfrhthr_file
 process.myCond.PFRecHitFileEE = EE_pfrhthr_file
 
 if options.doRefPfrh == 0:
-  process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(options.pfrhMult/2.0)
-  process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(options.pfrhMult/3.0)
+  if options.doSafetyMargin == 1:   
+    process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(options.pfrhMult/2.0)
+    process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(options.pfrhMult/3.0)
+  else:
+    process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(options.pfrhMult/2.2)
+    process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(options.pfrhMult/3.3)
 else: # use the reference values
   process.myCond.EcalPFRecHitThresholdNSigmas = cms.untracked.double(1.0)
   process.myCond.EcalPFRecHitThresholdNSigmasHEta = cms.untracked.double(1.0)
@@ -287,8 +296,12 @@ else: # use the reference values
 ### set seeding thresholds
 process.myCond.producedEcalPFSeedingThresholds = cms.untracked.bool(True)
 if options.doRefSeed == 0:
-  process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(options.seedMult/2.0) # PFRHs files are at 2sigma of the noise for |eta|<2.5
-  process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(options.seedMult/3.0) #                3sigma of the noise for |eta|>2.5
+  if options.doSafetyMargin == 1:
+    process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(options.seedMult/2.0) # PFRHs files are at 2sigma of the noise for |eta|<2.5
+    process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(options.seedMult/3.0) #                3sigma of the noise for |eta|>2.5
+  else:
+    process.myCond.EcalPFSeedingThresholdNSigmas = cms.untracked.double(options.seedMult/2.2) # PFRHs files are at 2sigma of the noise for |eta|<2.5
+    process.myCond.EcalPFSeedingThresholdNSigmasHEta = cms.untracked.double(options.seedMult/3.3) #                3sigma of the noise for |eta|>2.5
   process.myCond.PFSeedingFile =   EB_pfrhthr_file
   process.myCond.PFSeedingFileEE = EE_pfrhthr_file
 else: # use the reference values
