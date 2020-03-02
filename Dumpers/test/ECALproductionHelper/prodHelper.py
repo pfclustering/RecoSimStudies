@@ -27,7 +27,11 @@ def getOptions():
 
   parser.add_argument('--noisecond', type=int, dest='noisecond', help='which noise conditions do you want', default=2023)
   parser.add_argument('--pfrhmult', type=float, dest='pfrhmult', help='how many sigma of the noise to use for PFRH thresholds', default=1.)
+  parser.add_argument('--pfrhmultbelow2p5', type=float, dest='pfrhmultbelow2p5', help='sigma of the noise for PFRH thresholds for |eta|<2.5', default=0.)
+  parser.add_argument('--pfrhmultabove2p5', type=float, dest='pfrhmultabove2p5', help='sigma of the noise for PFRH thresholds for |eta|>2.5', default=0.)
   parser.add_argument('--seedmult', type=float, dest='seedmult', help='how many sigma of the noise to use for seeding thresholds', default=3.)
+  parser.add_argument('--seedmultbelow2p5', type=float, dest='seedmultbelow2p5', help='sigma of the noise for seeding thresholds for |eta|<2.5', default=0.)
+  parser.add_argument('--seedmultabove2p5', type=float, dest='seedmultabove2p5', help='sigma of the noise for seeding thresholds for |eta|>2.5', default=0.)
   parser.add_argument('--dorefpfrh', dest='dorefpfrh', help='use reference values for pfrh and gathering thresholds', action='store_true', default=False)
   parser.add_argument('--dorefseed', dest='dorefseed', help='use reference values for seeding thresholds', action='store_true', default=False)
   parser.add_argument('--doringavgEB', dest='doringavgEB', help='apply ring-averaged thresholds in EB', action='store_true', default=False)
@@ -67,8 +71,28 @@ if __name__ == "__main__":
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
-  pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
-  seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
+  if opt.pfrhmultbelow2p5 == 0:
+    pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
+  else:
+    pfrhLabel = '{a}-{b}'.format(a=opt.pfrhmultbelow2p5, b=opt.pfrhmultabove2p5)
+  if opt.seedmultbelow2p5 == 0:
+    seedLabel= opt.seedmult if not opt.dorefseed else 'Ref'
+  else:
+    seedLabel = '{a}-{b}'.format(a=opt.seedmultbelow2p5, b=opt.seedmultabove2p5)
+  #in case different values below/above 2.5 are not set, use the value of pfhrmult everywhere
+  if opt.pfrhmultbelow2p5 == 0:
+    pfrhMultbelow2p5 = opt.pfrhmult
+    pfrhMultabove2p5 = opt.pfrhmult
+  else:
+    pfrhMultbelow2p5 = opt.pfrhmultbelow2p5
+    pfrhMultabove2p5 = opt.pfrhmultabove2p5
+  #in case different values below/above 2.5 are not set, use the value of seedmult everywhere
+  if opt.seedmultbelow2p5 == 0:
+    seedMultbelow2p5 = opt.seedmult
+    seedMultabove2p5 = opt.seedmult
+  else:
+    seedMultbelow2p5 = opt.seedmultbelow2p5
+    seedMultabove2p5 = opt.seedmultabove2p5
   thrLabelEB = 'RingEB' if opt.doringavgEB else 'XtalEB' 
   thrLabelEE = 'RingEE' if opt.doringavgEE else 'XtalEE'
   thrLabel = thrLabelEB + thrLabelEE
@@ -252,7 +276,7 @@ if __name__ == "__main__":
   else:
     dorecofile=0
     dominiaodfile=1
-  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMult={pfrhm} seedMult={sm} nThr={nt} noiseCond={nsc} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, nsc=noisecnd, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} noiseCond={nsc} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, nsc=noisecnd, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   if opt.ch == 'QCD':
