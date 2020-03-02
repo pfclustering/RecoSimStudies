@@ -19,6 +19,11 @@ options.register ("dominiaodfile",
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,          # string, int, or float
                   "want to produce miniAOD file?")
+options.register ("noiseCond",
+                  2023, # default value
+                  VarParsing.multiplicity.singleton, # singleton or list
+                  VarParsing.varType.int,          # string, int, or float
+                  "noise conditions")
 options.register ("pfrhMult",
                   1.0, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
@@ -267,15 +272,21 @@ process.myCond = EcalTrivialConditionRetriever.clone()
 process.es_prefer = cms.ESPrefer("EcalTrivialConditionRetriever","myCond")
 
 # choose file from which to load the thresholds
-if options.doRingAverageEB == 0:
-  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.year))
-else:
-  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged_{y}.txt".format(y=options.year))
+if options.doRefPfrh == 0:
+  # load EB thrs file
+  if options.doRingAverageEB == 0:
+    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.noiseCond))
+  else:
+    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged_{y}.txt".format(y=options.noiseCond))
+  # load EE thrs file
+  if options.doRingAverageEE == 0:
+    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.noiseCond))
+  else:
+    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_{y}.txt".format(y=options.noiseCond))
+else: #no ringAvg for reference thrs
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.noiseCond))
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.options.noiseCond))
 
-if options.doRingAverageEE == 0:
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.year))
-else:
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_{y}.txt".format(y=options.year))
 
 ### set pfrh thresholds
 process.myCond.producedEcalPFRecHitThresholds = cms.untracked.bool(True)

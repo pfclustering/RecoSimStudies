@@ -25,6 +25,7 @@ def getOptions():
 
   parser.add_argument('--pu', type=str, dest='pu', help='PU configuration', default='noPU', choices=['noPU', 'wPU'])
 
+  parser.add_argument('--noisecond', type=int, dest='noisecond', help='which noise conditions do you want', default=2023)
   parser.add_argument('--pfrhmult', type=float, dest='pfrhmult', help='how many sigma of the noise to use for PFRH thresholds', default=1.)
   parser.add_argument('--seedmult', type=float, dest='seedmult', help='how many sigma of the noise to use for seeding thresholds', default=3.)
   parser.add_argument('--dorefpfrh', dest='dorefpfrh', help='use reference values for pfrh and gathering thresholds', action='store_true', default=False)
@@ -73,19 +74,24 @@ if __name__ == "__main__":
   thrLabel = thrLabelEB + thrLabelEE
   safetyLabel = 'noMargin' if not opt.dosafetymargin else 'wMargin'
   if opt.ch != 'QCD':
-    prodLabel='{c}_{e}_{g}_{d}_{pu}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   else:
-    prodLabel='{c}_{pu}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,noiseCond=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
+  # force the noise conditions to be of 2021 for reference thresholds
+  if opt.dorefpfrh and opt.dorefseed:
+    noisecnd = '2021'
+  else:
+    noisecnd = opt.noisecond
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
   dorefseed = 1 if opt.dorefseed else 0
-  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(opt.year))) \
-     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(opt.year))) \
-     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(opt.year))) \
-     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(opt.year))): 
+  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(noisecnd))) \
+     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(noisecnd))) \
+     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(noisecnd))) \
+     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(noisecnd))): 
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
@@ -117,7 +123,7 @@ if __name__ == "__main__":
     print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
     if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
     neventsjob = -1 
-    
+
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
     time2=opt.time.split(',')[1]
@@ -246,7 +252,7 @@ if __name__ == "__main__":
   else:
     dorecofile=0
     dominiaodfile=1
-  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMult={pfrhm} seedMult={sm} nThr={nt} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMult={pfrhm} seedMult={sm} nThr={nt} noiseCond={nsc} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhm=opt.pfrhmult, sm=opt.seedmult, nt=nthr, nsc=noisecnd, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   if opt.ch == 'QCD':
