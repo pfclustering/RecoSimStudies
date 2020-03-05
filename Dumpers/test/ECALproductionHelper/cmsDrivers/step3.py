@@ -295,7 +295,7 @@ if options.doRefPfrh == 0:
     EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_{y}.txt".format(y=options.noiseCond))
 else: #no ringAvg for reference thrs
   EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.noiseCond))
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.options.noiseCond))
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.noiseCond))
 
 
 ### set pfrh thresholds
