@@ -100,7 +100,7 @@ if __name__ == "__main__":
   if opt.ch != 'QCD':
     prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   else:
-    prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,noiseCond=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   dopu = 1 if opt.pu=='wPU' else 0
   # force the noise conditions to be of 2021 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
