@@ -206,7 +206,7 @@ if __name__ == "__main__":
   if opt.dorecofromeos: 
     infiles = ['', '', 'cluster_job{nj}_step2.root']
     
-  if opt.ch = 'QCD':
+  if opt.ch == 'QCD':
    drivers.append(step4_driverName)
    target_drivers.append('step4.py')
    infiles.append('step3_nj{nj}.root')
