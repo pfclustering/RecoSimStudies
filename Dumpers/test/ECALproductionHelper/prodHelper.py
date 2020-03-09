@@ -36,7 +36,7 @@ def getOptions():
   parser.add_argument('--dorefseed', dest='dorefseed', help='use reference values for seeding thresholds', action='store_true', default=False)
   parser.add_argument('--doringavgEB', dest='doringavgEB', help='apply ring-averaged thresholds in EB', action='store_true', default=False)
   parser.add_argument('--doringavgEE', dest='doringavgEE', help='apply ring-averaged thresholds in EE', action='store_true', default=False)
-  parser.add_argument('--dosafetymargin', dest='dosafetymargin', help='raise values on pfrh and seeding thrs of 10%', action='store_true', default=False)
+  parser.add_argument('--dosafetymargin', dest='dosafetymargin', help='raise values on pfrh and seeding thrs of 10 percent', action='store_true', default=False)
   parser.add_argument('--showersigmamult', type=float, dest='showersigmamult', help='how large do you want the shower sigma', default=1.)
   parser.add_argument('--maxsigmadist', type=float, dest='maxsigmadist', help='max RH-cl distance in PFClustering, in units of sigma, THIS OPTION CURRENTLY DOES NOTHING', default=10.)
   parser.add_argument('--doreco', dest='doreco', help='do step 3 (reconstruction) and later stages (if any) starting from an existing production', action='store_true', default=False)
@@ -206,7 +206,7 @@ if __name__ == "__main__":
   if opt.dorecofromeos: 
     infiles = ['', '', 'cluster_job{nj}_step2.root']
     
-  if opt.ch = 'QCD':
+  if opt.ch == 'QCD':
    drivers.append(step4_driverName)
    target_drivers.append('step4.py')
    infiles.append('step3_nj{nj}.root')
