@@ -50,12 +50,14 @@ def getOptions():
   parser.add_argument('--domedium', dest='domedium', help='set 2 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--dolong', dest='dolong', help='set 3 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--docustomtime', dest='docustomtime', help='set custom time', action='store_true', default=False)
-  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, example 01,02,01 for 1 hour for step1, 2 for step2, 2 for step3', default='02,02,05')
+  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, including dumper, example 01,02,01,01,04 for 1h for step1, 2h for step2, 1h for step3, 1h for step4, 4h for dumper', default='02,02,05,01,05')
   parser.add_argument('--domultithread', dest='domultithread', help='run multithreaded', action='store_true', default=False)
   parser.add_argument('--domultijob', dest='domultijob', help='run several separate jobs', action='store_true', default=False)
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
+  parser.add_argument('--splitfactord', type=int, dest='splitfactord', help='number of jobs for the dumper', default=1)
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
+  parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
   parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
@@ -70,6 +72,7 @@ if __name__ == "__main__":
   #############################
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
+  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else 'Cfg_RecoSimDumper_cfg.py'
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   if opt.pfrhmultbelow2p5 == 0:
     pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
@@ -135,7 +138,7 @@ if __name__ == "__main__":
   # special configurations for opt.dorecofromeos
   inseprefix = 'root://t3dcachedb.psi.ch:1094/'
   outseprefix = 'root://t3dcachedb.psi.ch:1094/'
-  if opt.dorecofromeos:
+  if opt.dorecofromeos and not opt.dodumperonly:
     inseprefix='root://eoscms.cern.ch/'
     # check directory exists
     command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
@@ -146,16 +149,16 @@ if __name__ == "__main__":
     njobs = max(alljobids)
     print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
     if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
-    neventsjob = -1 
+    nevtsjob = -1 
 
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
     time2=opt.time.split(',')[1]
     time3=opt.time.split(',')[2]
-    times = [time1,time2,time3]
-    if opt.ch == 'QCD': 
-      time4=opt.time.split(',')[3]
-      times.append(time4)
+    time4=opt.time.split(',')[3]
+    timed=opt.time.split(',')[4]
+    times = [time1,time2,time3,time4,timed]
+
     sbatch_times = map(lambda x: '--time=0-{}:00'.format(x), times)
   else:
     if opt.domedium:
@@ -166,8 +169,8 @@ if __name__ == "__main__":
       time = '--time=0-02:00'
     else:
       time = '--time=1-00:00'
-    sbatch_times = [time, time, time]
-    if opt.ch == 'QCD': sbatch_times.append(time)
+    sbatch_times = [time, time, time, time, '--time=0-01:00']
+
 
   ##############################
   # create production directory and logs directory within
@@ -199,17 +202,17 @@ if __name__ == "__main__":
   infiles_loc = ['', 'step1.root', 'step2.root', 'step3.root']
   outfiles = ['step1_nj{nj}.root', 'step2_nj{nj}.root', 'step3_nj{nj}.root']
   outfiles_loc = ['step1.root', 'step2.root', 'step3.root']
-  
-  if opt.ch == 'QCD':
+
+  if opt.dorecofromeos: 
+    infiles = ['', '', 'cluster_job{nj}_step2.root']
+    
+  if opt.ch = 'QCD':
    drivers.append(step4_driverName)
    target_drivers.append('step4.py')
    infiles.append('step3_nj{nj}.root')
    infiles_loc.append('step3.root')
    outfiles.append('step4_nj{nj}.root')
    outfiles_loc.append('step4.root')
-
-  if opt.dorecofromeos: 
-    infiles = ['', '', 'cluster_job{nj}_step2.root']
 
   ## copy them to dir
   for i,idriver in enumerate(drivers):
@@ -282,149 +285,149 @@ if __name__ == "__main__":
   if opt.ch == 'QCD':
     step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags) 
     cmsRuns.append(step4_cmsRun)
-    cmsRuns_add.append('')
+    cmsRuns_add.append('')  
+  
+  
+  if not opt.dodumperonly:
   ############################
   # write the launching scripts
   ############################
-  for i,idriver in enumerate(drivers):
+    for i,idriver in enumerate(drivers):
 
-    if opt.doreco and i<2: continue # skip everything that is not related to step3
+      if opt.doreco and i<2: continue # skip everything that is not related to step3
 
-    for nj in range(0,njobs):
-  
-      ### configurations for the template script
-      outputDir = '"/pnfs/psi.ch/cms/trivcat/store/user/"$USER"/EcalProd/"' 
-      if opt.dosavehome: outputDir = '`pwd`/../' 
+      for nj in range(0,njobs):
+    
+        ### configurations for the template script
+        outputDir = '"/pnfs/psi.ch/cms/trivcat/store/user/"$USER"/EcalProd/"' 
+        if opt.dosavehome: outputDir = '`pwd`/../' 
 
-      mkdiroutput_command = 'xrdfs t3dcachedb03.psi.ch mkdir $SERESULTDIR'
-      if opt.dosavehome: mkdiroutput_command = 'mkdir -p $SERESULTDIR'
-         
+        mkdiroutput_command = 'xrdfs t3dcachedb03.psi.ch mkdir $SERESULTDIR'
+        if opt.dosavehome: mkdiroutput_command = 'mkdir -p $SERESULTDIR'
 
-      cpinput_command = ''
-      if infiles[i]!='':
-        cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
-        if opt.dosavehome: cpinput_command = 'cp $SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
-        if opt.doreco: 
-          if opt.dosavehome: cpinput_command = 'cp {ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
-          else:
-            # in case of step4, the step3 has to be taken from the workdir and not from the custominput 
+        cpinput_command = ''
+        if infiles[i]!='':
+          cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
+          if opt.dosavehome: cpinput_command = 'cp $SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj),infile_loc=infiles_loc[i])
+          if opt.doreco: 
             custominput = opt.custominput if not opt.domultijob else opt.custominputdir + '/' + infiles[i].format(nj=nj) 
-            if 'step4' not in idriver:
-              cpinput_command = 'xrdcp $INSEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
-            else: 
-              cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj), infile_loc=infiles_loc[i])
+            if opt.dosavehome: cpinput_command = 'cp {ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
+            else:              
+              # in case of step4, the step3 has to be taken from the workdir and not from the custominput 
+              if 'step4' not in idriver:
+                cpinput_command = 'xrdcp $INSEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
+              else: 
+                cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj), infile_loc=infiles_loc[i])
+      
               
+        cpoutput_command = 'xrdcp -f {outfile_loc} $OUTSEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
+        if opt.dosavehome: cpoutput_command = 'cp {outfile_loc} $SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
+         
+        cpaux_command = ''
+        if 'step3' in idriver:
+          cpaux_command = 'cp -r $CMSSW_BASE/src/RecoSimStudies/Dumpers/data $WORKDIR'
 
-      cpoutput_command = 'xrdcp -f {outfile_loc} $OUTSEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
-      if opt.dosavehome: cpoutput_command = 'cp {outfile_loc} $SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
-       
-      cpaux_command = ''
-      if 'step3' in idriver:
-        cpaux_command = 'cp -r $CMSSW_BASE/src/RecoSimStudies/Dumpers/data $WORKDIR'
+        ### define a template script  
+        template = [
+        '#!/bin/bash',
+        '',
 
-      ### define a template script  
-      template = [
-      '#!/bin/bash',
-      '',
+        #### variables
+        'DIRNAME="{ind}"',
+        'STARTDIR=`pwd`',
+        'TOPWORKDIR="/scratch/"$USER/',
+        'JOBDIR="gen_"$SLURM_JOB_ID',
+        'WORKDIR=$TOPWORKDIR/$JOBDIR',
+        'INSEPREFIX="{isepx}"',
+        'OUTSEPREFIX="{osepx}"',
+        'SERESULTDIR={od}/$DIRNAME',
+        'JOBOPFILENAME="{jo}"',
+        '',
 
-      #### variables
-      'DIRNAME="{ind}"',
-      'STARTDIR=`pwd`',
-      'TOPWORKDIR="/scratch/"$USER/',
-      'JOBDIR="gen_"$SLURM_JOB_ID',
-      'WORKDIR=$TOPWORKDIR/$JOBDIR',
-      'INSEPREFIX="{isepx}"',
-      'OUTSEPREFIX="{osepx}"',
-      'SERESULTDIR={od}/$DIRNAME',
-      'JOBOPFILENAME="{jo}"',
-      '',
+        #### environment
+        'source $VO_CMS_SW_DIR/cmsset_default.sh',
+        'shopt -s expand_aliases',
+        'echo ""',
+        'echo "Going to set up cms environment"',
+        'cd $STARTDIR',
+        'cmsenv',
+        'echo ""',
+        '',
 
-      #### environment
-      'source $VO_CMS_SW_DIR/cmsset_default.sh',
-      'shopt -s expand_aliases',
-      'echo ""',
-      'echo "Going to set up cms environment"',
-      'cd $STARTDIR',
-      'cmsenv',
-      'echo ""',
-      '',
+        #### workdir
+        'echo "Going to create work dir"',
+        'mkdir -p $WORKDIR',
+        'echo "workdir: "',
+        'echo $WORKDIR',
+        'echo ""',
+        '',
 
-      #### workdir
-      'echo "Going to create work dir"',
-      'mkdir -p $WORKDIR',
-      'echo "workdir: "',
-      'echo $WORKDIR',
-      'echo ""',
-      '',
+        #### outputdir
+        'echo "Going to create the output dir"',
+        'echo "May give an error if the directory already exists, which can be safely ignored"',
+        '{mkdir}',
+        'echo ""',
+        '',
 
-      #### outputdir
-      'echo "Going to create the output dir"',
-      'echo "May give an error if the directory already exists, which can be safely ignored"',
-      '{mkdir}',
-      'echo ""',
-      '',
+        #### copy driver and other aux files 
+        'echo "Going to copy cms driver and aux files"',
+        'cp $JOBOPFILENAME $WORKDIR/$JOBOPFILENAME',
+        '{cpaux}',
+        'cp {tf} $WORKDIR/.',
+        'echo ""',
+        '',
 
-      #### copy driver and other aux files 
-      'echo "Going to copy cms driver and aux files"',
-      'cp $JOBOPFILENAME $WORKDIR/$JOBOPFILENAME',
-      '{cpaux}',
-      'cp {tf} $WORKDIR/.',
-      'echo ""',
-      '',
+        #### copy input file 
+        'echo "Going to copy input file if needed"',
+        '{cpin}',
+        'echo ""',
+        '',
 
-      #### copy input file 
-      'echo "Going to copy input file if needed"',
-      '{cpin}',
-      'echo ""',
-      '',
+        #### run
+        'cd $WORKDIR',
+        'echo ""',
+        '',
+        'echo "Going to run"',
+        'DATE_START=`date +%s`',
+        '{cmsRun}',
+        'DATE_END=`date +%s`',
+        'echo ""',
+        '',
+        'echo "Finished running"',
+        'echo "Content of current directory"',
+        'ls -al',
 
-      #### run
-      'cd $WORKDIR',
-      'echo ""',
-      '',
-      'echo "Going to run"',
-      'DATE_START=`date +%s`',
-      '{cmsRun}',
-      'DATE_END=`date +%s`',
-      'echo ""',
-      '',
-      'echo "Finished running"',
-      'echo "Content of current directory"',
-      'ls -al',
+        #### copy back output
+        'echo "Going to copy the output to the output directory"',
+        '{cpout}',
+        '',
+        'echo ""',
 
-      #### copy back output
-      'echo "Going to copy the output to the output directory"',
-      '{cpout}',
-      '',
-      'echo ""',
+        #### clean and go 
+        'echo "Cleaning up $WORKDIR"',
+        'rm -rf $WORKDIR',
+        'RUNTIME=$((DATE_END-DATE_START))',
+        'echo "Wallclock running time: $RUNTIME s"',
+        'cd $STARTDIR',
 
-      #### clean and go 
-      'echo "Cleaning up $WORKDIR"',
-      'rm -rf $WORKDIR',
-      'RUNTIME=$((DATE_END-DATE_START))',
-      'echo "Wallclock running time: $RUNTIME s"',
-      'cd $STARTDIR',
+        ] 
+        template = '\n'.join(template)
+        template = template.format(ind=prodLabel,od=outputDir,jo=target_drivers[i],mkdir=mkdiroutput_command,isepx=inseprefix,osepx=outseprefix,
+                                   #cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+nthr+1),cpaux=cpaux_command) 
+                                   cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+1),cpaux=cpaux_command,tf=tag_filename) 
 
-      ] 
-      template = '\n'.join(template)
-      template = template.format(ind=prodLabel,od=outputDir,jo=target_drivers[i],mkdir=mkdiroutput_command,isepx=inseprefix,osepx=outseprefix,
-                                 #cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+nthr+1),cpaux=cpaux_command) 
-                                 cpin=cpinput_command,cpout=cpoutput_command,cmsRun=cmsRuns[i]+' '+cmsRuns_add[i].format(nj=nj+1),cpaux=cpaux_command,tf=tag_filename) 
+        launcherFile = '{}/launch_{}.sh'.format(prodDir,outfiles[i].format(nj=nj).split('.root')[0])
+        with open(launcherFile, 'w') as f:
+          f.write(template)
 
-      launcherFile = '{}/launch_{}.sh'.format(prodDir,outfiles[i].format(nj=nj).split('.root')[0])
-      with open(launcherFile, 'w') as f:
-        f.write(template)
-
-  #############################
-  # write the template script to run the dumper
-  # one template for the full task
-  ############################
+    #############################
+    # write the template script to run the postproduction helper (one job for the full task)
+    ############################
   if not opt.doskipdumper and opt.ch != 'QCD':
  
     # the template should run a python script to get the sample list
-    # and then run the actual cmsRun command for the dumper
     # all done locally
-    template_dumper = [
+    template_postprod = [
       '#!/bin/bash',
       '',
       'STARTDIR=$PWD/../',
@@ -440,15 +443,8 @@ if __name__ == "__main__":
       ### running part
       'echo "Going to run postProdHelper.py"',
       'DATE_START=`date +%s`',
-      'python postProdHelper.py --pl {pl} --user {u}'.format(pl=prodLabel, u=user),
+      'python postProdHelper.py --pl {pl} --user {u} --splitfactord {spd}'.format(pl=prodLabel, u=user, spd=opt.splitfactord),
       'echo ""',
-      '',
-      'echo "Going to run the Dumper"',
-      'if [ "$USER" == "anlyon" ] ; then ',
-        'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=/work/anlyon/dumpedFiles/{pl}.root inputFiles_load=../../data/samples/{pl}.txt'.format(pl=prodLabel),
-      'else',
-        'cmsRun ../../python/Cfg_RecoSimDumper_cfg.py outputFile=../../test/outputfiles/{pl}.root inputFiles_load=../../data/samples/{pl}.txt'.format(pl=prodLabel),
-      'fi',
       'DATE_END=`date +%s`',
       'echo ""',
       '',
@@ -458,59 +454,137 @@ if __name__ == "__main__":
       'echo "Wallclock running time: $RUNTIME s"',
     ]
     
-    template_dumper = '\n'.join(template_dumper)
+    template_postprod = '\n'.join(template_postprod)
 
-    launcherFile_dumper = '{}/launch_dumper.sh'.format(prodDir)
-    with open(launcherFile_dumper, 'w') as f:
-      f.write(template_dumper)
+    launcherFile_postprod = '{}/launch_postprod.sh'.format(prodDir)
+    with open(launcherFile_postprod, 'w') as f:
+      f.write(template_postprod)
+
+    #############################
+    # write the template for the dumper
+    ############################
+    
+    for njd in range(0,opt.splitfactord):
+      template_dumper = [
+        '#!/bin/bash',
+        '',
+        'STARTDIR=$PWD/../',
+        'TOPWORKDIR="/scratch/"$USER/',
+        'JOBDIR="dump_"$SLURM_JOB_ID',
+        'WORKDIR=$TOPWORKDIR/$JOBDIR',
+        'INSEPREFIX="{isepx}"',
+        'OUTSEPREFIX="{osepx}"',
+        'SERESULTDIR=$OUTSEPREFIX//pnfs/psi.ch/cms/trivcat/store/user/$USER/Dumper/',        
+        '',
+
+        #### environment
+        'source $VO_CMS_SW_DIR/cmsset_default.sh',
+        'shopt -s expand_aliases',
+        'echo ""',
+        'echo "Going to set up cms environment"',
+        'cd $STARTDIR',
+        'cmsenv',
+        'echo ""',
+        '',
+
+        #### workdir
+        'echo "Going to create work dir, will contain intermediate output"',
+        'mkdir -p $WORKDIR',
+         'echo "workdir: "',
+        'echo $WORKDIR',
+        'echo ""',
+        '',
+
+        ### running part
+        'echo "Going to run the Dumper"',
+        'DATE_START=`date +%s`',
+        'if [ "$USER" == "anlyon" ] ; then ',
+          'cmsRun ../../python/{cfg} outputFile=/work/anlyon/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
+        'else',
+          'cmsRun ../../python/{cfg} outputFile=$WORKDIR/{pl}_njd{njd}.root inputFiles_load=../../data/samples/{pl}_njd{njd}.txt',
+        'fi',
+        'echo ""',
+        '',
+
+        ### copy back output
+        'echo "Going to copy the output to the output directory"',
+        'xrdcp -f $WORKDIR/{pl}_njd{njd}.root $SERESULTDIR/{pl}_njd{njd}.root',
+        'DATE_END=`date +%s`',
+        'echo ""',
+
+        #### clean and go 
+        'echo "Cleaning up $WORKDIR"',
+        'rm -rf $WORKDIR',
+        'RUNTIME=$((DATE_END-DATE_START))',
+        'echo "Wallclock running time: $RUNTIME s"',
+        'cd $STARTDIR',
+      ]
+      
+      template_dumper = '\n'.join(template_dumper)
+      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=inseprefix, cfg=dumpcfg)
+
+      launcherFile_dumper = '{}/launch_dumper_njd{}.sh'.format(prodDir,njd)
+      with open(launcherFile_dumper, 'w') as f:
+        f.write(template_dumper)
+
 
   #############################
   # finally write the submitter
   ############################# 
   submitter_template = []
+  postprod_dependencies = '' # 
 
-  dumper_dependencies = ''
+  if not opt.dodumperonly:
+    postprod_dependencies = '--dependency=afterany'
+    for nj in range(0,njobs):
 
-  for nj in range(0,njobs):
+      sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
 
-    sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
+      sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
 
-    sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
-
-    sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+      if opt.doreco: # strip the dependency away
+        sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
    
-    if opt.ch == 'QCD':  
-      sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
+      if opt.ch == 'QCD':  
+        sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
 
-    if opt.doreco: # strip the dependency away
-      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+      postprod_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
 
-    dumper_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
+      if not opt.doreco:
+        submitter_template.append(sbatch_command_step1)
+        submitter_template.append('echo "$jid1_nj%i"' % nj)
+        submitter_template.append('jid1_nj%i=${jid1_nj%i#"Submitted batch job "}' % (nj,nj))
+        submitter_template.append(sbatch_command_step2)
+        submitter_template.append('echo "$jid2_nj%i"' % nj)
+        submitter_template.append('jid2_nj%i=${jid2_nj%i#"Submitted batch job "}' % (nj,nj))
 
-    if not opt.doreco:
-      submitter_template.append(sbatch_command_step1)
-      submitter_template.append('echo "$jid1_nj%i"' % nj)
-      submitter_template.append('jid1_nj%i=${jid1_nj%i#"Submitted batch job "}' % (nj,nj))
-      submitter_template.append(sbatch_command_step2)
-      submitter_template.append('echo "$jid2_nj%i"' % nj)
-      submitter_template.append('jid2_nj%i=${jid2_nj%i#"Submitted batch job "}' % (nj,nj))
+      submitter_template.append(sbatch_command_step3)
+      submitter_template.append('echo "$jid3_nj%i"' % nj)
+      submitter_template.append('jid3_nj%i=${jid3_nj%i#"Submitted batch job "}' % (nj,nj))
 
-    submitter_template.append(sbatch_command_step3)
-    submitter_template.append('echo "$jid3_nj%i"' % nj)
-    submitter_template.append('jid3_nj%i=${jid3_nj%i#"Submitted batch job "}' % (nj,nj))
-    
-    if opt.ch == 'QCD':
-      submitter_template.append(sbatch_command_step4)
-      submitter_template.append('echo "$jid4_nj%i"' % nj)
-      submitter_template.append('jid4_nj%i=${jid4_nj%i#"Submitted batch job "}' % (nj,nj))
-    
-  # add the dumper part
+      if opt.ch == 'QCD':
+        submitter_template.append(sbatch_command_step4)
+        submitter_template.append('echo "$jid4_nj%i"' % nj)
+        submitter_template.append('jid4_nj%i=${jid4_nj%i#"Submitted batch job "}' % (nj,nj))
+      
+  # add the postproduction and dumper part
   if not opt.doskipdumper and opt.ch != 'QCD':
-    sbatch_command_dumper = 'jid_d=$(sbatch -p wn --account=t3 -o logs/dumper.log -e logs/dumper.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper.sh)'.format(pl=prodLabel,t='--time=0-03:59',dd=dumper_dependencies)
-    submitter_template.append(sbatch_command_dumper)
-    submitter_template.append('echo "$jid_d"')
-    submitter_template.append('jid_d=${jid_d#"Submitted batch job "}')
-  
+    # post production
+    sbatch_command_postprod = 'jid_pp=$(sbatch -p wn --account=t3 -o logs/postprod.log -e logs/postprod.log --job-name=postprod_{pl} {t} --ntasks=1 {dd} launch_postprod.sh)'.format(pl=prodLabel,t='--time=0-01:00',dd=postprod_dependencies)
+    submitter_template.append(sbatch_command_postprod)
+    submitter_template.append('echo "$jid_pp"')
+    submitter_template.append('jid_pp=${jid_pp#"Submitted batch job "}')
+    dumper_dependencies = ':$jid_pp'
+    # dumper
+    for njd in range(0, opt.splitfactord):
+      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[4],dd=dumper_dependencies)
+      submitter_template.append(sbatch_command_dumper)
+      submitter_template.append('echo "$jid_njd%i"' % njd)
+      submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (njd,njd))
+   
+
+  # finish ...
   submitter_template = '\n\n'.join(submitter_template)
 
   submitterFile = '{}/submit.sh'.format(prodDir)
