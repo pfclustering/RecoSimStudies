@@ -50,7 +50,7 @@ def getOptions():
   parser.add_argument('--domedium', dest='domedium', help='set 2 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--dolong', dest='dolong', help='set 3 days as wall clock time instead of 1 day', action='store_true', default=False)
   parser.add_argument('--docustomtime', dest='docustomtime', help='set custom time', action='store_true', default=False)
-  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, including dumper, example 01,02,01,01,04 for 1h for step1, 2h for step2, 1h for step3, 1h for step4, 4h for dumper', default='02,02,05,05')
+  parser.add_argument('--time', type=str, dest='time', help='requires docustomtime, allowed time for each job of each step in hours, including dumper, example 01,02,01,01,04 for 1h for step1, 2h for step2, 1h for step3, 1h for step4, 4h for dumper', default='02,02,05,01,05')
   parser.add_argument('--domultithread', dest='domultithread', help='run multithreaded', action='store_true', default=False)
   parser.add_argument('--domultijob', dest='domultijob', help='run several separate jobs', action='store_true', default=False)
   parser.add_argument('--njobs', type=int, dest='njobs', help='number of parallel jobs to submit', default=10)
@@ -206,7 +206,7 @@ if __name__ == "__main__":
   if opt.dorecofromeos: 
     infiles = ['', '', 'cluster_job{nj}_step2.root']
     
-  if opt.ch = 'QCD':
+  if opt.ch == 'QCD':
    drivers.append(step4_driverName)
    target_drivers.append('step4.py')
    infiles.append('step3_nj{nj}.root')
@@ -312,8 +312,14 @@ if __name__ == "__main__":
           if opt.doreco: 
             custominput = opt.custominput if not opt.domultijob else opt.custominputdir + '/' + infiles[i].format(nj=nj) 
             if opt.dosavehome: cpinput_command = 'cp {ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
-            else:              cpinput_command = 'xrdcp $INSEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
-
+            else:              
+              # in case of step4, the step3 has to be taken from the workdir and not from the custominput 
+              if 'step4' not in idriver:
+                cpinput_command = 'xrdcp $INSEPREFIX/{ci} $WORKDIR/{infile_loc}'.format(ci=custominput,infile_loc=infiles_loc[i])
+              else: 
+                cpinput_command = 'xrdcp $INSEPREFIX/$SERESULTDIR/{infile} $WORKDIR/{infile_loc}'.format(infile=infiles[i].format(nj=nj), infile_loc=infiles_loc[i])
+      
+              
         cpoutput_command = 'xrdcp -f {outfile_loc} $OUTSEPREFIX/$SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
         if opt.dosavehome: cpoutput_command = 'cp {outfile_loc} $SERESULTDIR/{outfile}'.format(outfile_loc=outfiles_loc[i],outfile=outfiles[i].format(nj=nj))
          
