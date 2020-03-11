@@ -515,7 +515,7 @@ if __name__ == "__main__":
       ]
       
       template_dumper = '\n'.join(template_dumper)
-      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=inseprefix, cfg=dumpcfg)
+      template_dumper = template_dumper.format(pl=prodLabel, njd=njd, isepx=inseprefix, osepx=outseprefix, cfg=dumpcfg)
 
       launcherFile_dumper = '{}/launch_dumper_njd{}.sh'.format(prodDir,njd)
       with open(launcherFile_dumper, 'w') as f:
