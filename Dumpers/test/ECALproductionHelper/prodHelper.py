@@ -131,7 +131,7 @@ if __name__ == "__main__":
   nevtspremixfile = 600 # current number of events in each premixed file
   npremixfiles = nevtsjob / nevtspremixfile + 1
   if opt.doreco and opt.custominput == None and opt.custominputdir == None: raise RuntimeError('you must supply the custom input, when running with doreco activated')
-  if opt.doreco and not opt.domultijob and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
+  if opt.doreco and not opt.dorecofromeos and not opt.domultijob and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
   if opt.doreco and not opt.dorecofromeos and opt.domultijob and not os.path.isdir(opt.custominputdir): raise RuntimeError('custominputdir {} not found').format(opt.custominputdir)
   if opt.doreco and not opt.dorecofromeos and opt.domultijob: print 'A gentle reminder that if you are running with doreco and domultijob activated, you should use the same job splitting that was used for the original production'
   if not opt.doreco and opt.dorecofromeos: raise RuntimeError('You have to activate doreco option in order to run dorecofromeos')
@@ -141,15 +141,22 @@ if __name__ == "__main__":
   if opt.dorecofromeos and not opt.dodumperonly:
     inseprefix='root://eoscms.cern.ch/'
     # check directory exists
-    command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
-    out = subprocess.check_output(command, shell=True) # if not a dir, there will be an exception
-    files=out.split('\n')[0:-1] # get the list of files
-    if not files: raise RuntimeError('files not found')
-    alljobids = map(lambda x: int(x.split('_job')[1].split('_step2')[0]), files) # isolate the job number
-    njobs = max(alljobids)
-    print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
-    if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
-    nevtsjob = -1 
+    if opt.custominputdir != None:
+      command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
+      out = subprocess.check_output(command, shell=True) # if not a dir, there will be an exception
+      files=out.split('\n')[0:-1] # get the list of files
+      if not files: raise RuntimeError('files not found')
+      alljobids = map(lambda x: int(x.split('_job')[1].split('_step2')[0]), files) # isolate the job number
+      njobs = max(alljobids)
+      print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
+      if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
+      nevtsjob = -1 
+    elif opt.custominput != None:
+      command = 'xrdfs {sepx} stat {f}'.format(sepx=inseprefix, f=opt.custominput)
+      out = subprocess.check_output(command, shell=True) # if not a file, an ERROR will be present in the out
+      if 'ERROR' in out: 
+        print command
+        raise RuntimeError('file not found, exiting')
 
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
