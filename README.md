@@ -1,49 +1,119 @@
 # RecoSimStudies
 
-1) Install:
+This is a customised version of https://github.com/bmarzocc/RecoSimStudies
+In this repository, you find all the necessary codes for the production of samples, from the generation to the dumping.
 
-    * scram project CMSSW_10_6_4
-    * cd CMSSW_10_6_4/src/
-    * cmsenv
-    * git cms-init
-    * git cms-merge-topic bmarzocc:PR_CaloParticles
-    * git cms-merge-topic bmarzocc:PR_ParticleGuns
-    * git cms-merge-topic bmarzocc:PR_EcalPFSeedingThresholds #if you want new PFSeeding and PFGathering thresholds
-    * git clone https://github.com/bmarzocc/RecoSimStudies
-    * scram b -j 5
+## Installation
 
-2) Produce GEN-SIM of standard PhotonGun:
-    
-    * cd RecoSimStudies/Dumpers/test/
-    * cmsRun SingleGammaPt35_pythia8_cfi_GEN_SIM.py
+First installation:
+```
+cmsrel CMSSW_10_6_1_patch1
+```
+If you get an error, make sure that the remote machine on which you are working on is new enough to be compatible with the CMSSW_10_6_1_patch1 release. At the moment of writing, this release only works for machines with SL7 architecture at least, and one has typically to ask for a t3ui07 account to the PSI-T3 administrators.
 
-3) Produce GEN-SIM of PhotonGun in front of ECAL:
-    
-    * cd RecoSimStudies/Dumpers/test/
-    * cmsRun DoubleGammaE50_CloseEcal_cfi_GEN_SIM.py
+```
+cd CMSSW_10_6_1_patch1/src/
+cmsenv
+git cms-init
+git checkout -b base
+```
+either:
+```
+git cms-merge-topic bmarzocc:PR_CaloParticles
+git cms-merge-topic bmarzocc:PR_EcalPFSeedingThresholds
+git cms-merge-topic bmarzocc:PR_ParticleGuns
+```
+or:
+```
+git cms-merge-topic mgratti:mg-flatenergyproducer
+```
 
-4) Produce DIGI-RAW:
-    
-    In case of studies including PCaloHits uncomment line #80 to keep the PCaloHit collection. 
+```
+git clone git@github.com:pfclustering/RecoSimStudies.git
+scram b -j 8
+```
 
-    * cd RecoSimStudies/Dumpers/test/
-    * cmsRun step2_DIGI_L1_DIGI2RAW_HLT.py
+In case you want to interact with the Storage Element, don't forget to set up your proxy:
+```    
+voms-proxy-init --voms cms --valid 186:00
+```
 
-5) Produce RECO:
+## Workflow
 
-    In case of studies including PCaloHits uncomment line #65 to keep the PCaloHit collection. 
-    
-    * cd RecoSimStudies/Dumpers/test/
-    * cmsRun step3_RAW2DIGI_L1Reco_RECO_RECOSIM_EI_PAT_VALIDATION_DQM.py
+### Development of ```cmssw```
+Developments Development of ```cmssw``` by members of pfclustering team are done via fork of cmssw.
+Currently there are three topics that can be changed (see above), under bmarzocc repo.
+Changes to a given topic are pushed first to own fork, and then PR is done https://github.com/bmarzocc/cmssw/tree/<TOPIC_BRANCH>
 
-6) Produce TwentyPhotons Run3_2021 Recos with condor:
+*IMPORTANT NOTE* Badder is using CMSSW_10_6_4, but the topic branches are still at CMSSW_10_6_0!
 
-    * cd RecoSimStudies/Dumpers/test/
-    * python condor_production.py  -o /eos/cms/store/group/dpg_ecal/alca_ecalcalib/bmarzocc/Clustering/TwentyGammasGunPt1-100_pythia8_withPU_withTracker_Run3_2021/ -c /afs/cern.ch/work/b/bmarzocc/Clustering/CMSSW_10_6_4/ -q tomorrow -n 100000 -s 100 -e cms
+The developments should be tested in the full (meaning three topics) configuration, but only the commits relevant to a given topic should be pushed
+to the relevant topic, with the following workflow:
 
-7) Run general dumper (per crystal, PFcluster, superCluster infos) on a RECO sample (produced in the previous steps):
-    
-    * cd RecoSimStudies/Dumpers/
-    * cmsRun python/RecoSimDumper_cfg.py
+* within a clean area, create new local branch with following convention and do developments:
+```
+cd CMSSW_X_Y_Z/src
+git checkout -b mg-<TOPIC>
+git remote add my-cmssw git@github.com:mgratti/cmssw.git 
+git remote add badder-cmssw https://github.com/bmarzocc/cmssw.git
+git pull badder-cmssw <TOPIC>
+```
+* make the relevant changes (which should already have been tested)
+```
+git add bla.cpp
+git commit -m "bla" 
+```
+* push to remote branch, with same name convention:
+```
+git push my-cmssw mg-PR_<TOPIC>
+```
+* pull request to relevant topic branch under bmarzocc repo
+
+* [OBSOLETE] once PR has been accepted, go back to `base` branch, and DELETE both local and remote branches
+```
+git checkout base
+git branch -d mg-PR_<topic>
+git push my-cmssw --delete mg-PR_<topic>
+```
+* [OBSOLETE] re-do all the relevant merge-topic 
+
+More information and tricks on how to work with cmssw and github here: http://cms-sw.github.io/faq.html
 
 
+### Development of ```RecoSimStudies```
+Development of ```RecoSimStudies``` by members of pfclustering team happens within the pfclustering fork; 
+each member has his/her own branch where to develop the new features. When development is over, he/she opens a pull request,
+(ideally another member checks) and merges with master branch.
+
+After master is in sync, developments of bmarzocc/RecoSimStudies are fetched via a pull request (from web page) with a brief comment about the changes.
+
+## Generation
+For all steps of generation until reco files 
+```
+cd Dumpers/test/ECALproductionHelper
+```
+See available options:
+```
+python prodHelper.py --help
+```
+Example commands in ```Dumpers/test/ECALproductionHelper/README.md```
+
+To resubmit jobs that failed for step 3:
+```
+python resubmitHelper.py --help
+```
+After production is over, you can run post-production to create list of files and cmsRun command for next step
+```
+python postProdHelper.py --help
+```
+
+### Dumper
+```                         
+cd RecoSimStudies/Dumpers/python/
+```
+
+Run the dumper on a RECO sample. Example of commands are given in Cfg_RecoSimDumper_cfg.py. For instance, use
+
+```
+cmsRun Cfg_RecoSimDumper_cfg.py outputFile=../test/outputfiles/dumpedFiles/dumped_singlePhoton_5k_EB.root inputFiles=file:../test/outputfiles/singlePhoton_5k_EB/step3.root
+```
