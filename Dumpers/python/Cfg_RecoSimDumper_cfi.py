@@ -17,7 +17,7 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     pfClusterCollection               = cms.InputTag("particleFlowClusterECAL","","RECO"),
     ebSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALBarrel","RECO"), 
     eeSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower","RECO"), 
-    useHcalTowers                   = cms.bool(False,  #compute HoE
+    useHcalTowers                   = cms.bool(False),  #compute HoE
     hcalTowersCollection            = cms.InputTag("towerMaker"), #compute HoE
     useRetunedSC                    = cms.bool(False),  #run on new RetunedSCs
     useDeepSC                       = cms.bool(False),  #run on new DeepSCs
@@ -45,7 +45,7 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     saveScores                        = cms.bool(True),  #save scores information
     scoreType                       = cms.string("simScore_final_combination"),  #score to be used for caloParticle matching if saveScores false
     #scoreType                      = cms.string("sim_fraction"),  #score to be used for caloParticle matching
-    genID                             = cms.vint32(22,11, -11), #save only caloParticles with this pdgId 
+    genID                             = cms.vint32(22,11, -11,), #save only caloParticles with this pdgId 
     #genID                            = cms.vdouble(0),  #save only caloParticles with this pdgId 
 
 )
