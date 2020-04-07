@@ -2607,17 +2607,16 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){ 
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_PFCluster.at(iPFCl),&hitsAndEnergies_CaloPart.at(iCalo),recHitsEB,recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE);    
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_10MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_10MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_50MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_50MeVCut.at(iCalo), recHitsEB,recHitsEE);  
                  std::vector<double> scores_100MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_100MeVCut.at(iCalo), recHitsEB,recHitsEE);              
-                 //if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
-                 //    std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
-                 //    return;
-                 //}
-
                  if(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iPFCluster.eta(),iPFCluster.phi())<0.1) dR_simScore.push_back(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iPFCluster.eta(),iPFCluster.phi())); 
                  else dR_simScore.push_back(999.);  
  
@@ -2844,6 +2843,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -2851,10 +2854,6 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
                  std::vector<double> scores_50MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_50MeVCut.at(iCalo), recHitsEB,recHitsEE);  
                  std::vector<double> scores_100MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_100MeVCut.at(iCalo), recHitsEB,recHitsEE);                
                  if(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iSuperCluster.eta(),iSuperCluster.phi())<0.1) dR_simScore.push_back(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iSuperCluster.eta(),iSuperCluster.phi())); 
-                 //if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
-                 //    std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
-                 //    return;
-                 //}
 
                  else dR_simScore.push_back(999.);
           
@@ -3059,6 +3058,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3320,6 +3323,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3527,6 +3534,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3782,6 +3793,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3989,6 +4004,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4244,6 +4263,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4451,6 +4474,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4706,6 +4733,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4913,6 +4944,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
