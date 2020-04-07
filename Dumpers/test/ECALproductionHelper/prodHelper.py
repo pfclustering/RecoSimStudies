@@ -58,6 +58,7 @@ def getOptions():
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
+  parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
   parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   else:
     prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+  prodLabelIn = prodLabel if opt.pli==None else opt.pli # prod label of input for postProduction , can be different from output production label
   dopu = 1 if opt.pu=='wPU' else 0
   # force the noise conditions to be of 2021 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
@@ -450,7 +452,7 @@ if __name__ == "__main__":
       ### running part
       'echo "Going to run postProdHelper.py"',
       'DATE_START=`date +%s`',
-      'python postProdHelper.py --pl {pl} --user {u} --splitfactord {spd}'.format(pl=prodLabel, u=user, spd=opt.splitfactord),
+      'python postProdHelper.py --pli {pli} --plo {plo} --user {u} --splitfactord {spd}'.format(pli=prodLabelIn,plo=prodLabel, u=user, spd=opt.splitfactord),
       'echo ""',
       'DATE_END=`date +%s`',
       'echo ""',
