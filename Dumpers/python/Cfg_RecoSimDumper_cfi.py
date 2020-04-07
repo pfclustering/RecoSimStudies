@@ -42,9 +42,8 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     savePFClusterhits                 = cms.bool(True),  #save pfClustershits information
     saveSuperCluster                  = cms.bool(False),  #save superClusters information
     saveShowerShapes                  = cms.bool(False),  #save showerShapes information
-    saveScores                        = cms.bool(True),  #save scores information
-    scoreType                       = cms.string("simScore_final_combination"),  #score to be used for caloParticle matching if saveScores false
-    #scoreType                      = cms.string("sim_fraction"),  #score to be used for caloParticle matching
+    saveScores                        = cms.bool(False),  #save scores information
+    scoreType                         = cms.string("sim_fraction"),  #score to be used for caloParticle matching
     genID                             = cms.vint32(22,11, -11,), #save only caloParticles with this pdgId 
     #genID                            = cms.vdouble(0),  #save only caloParticles with this pdgId 
 
