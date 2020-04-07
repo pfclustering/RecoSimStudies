@@ -173,6 +173,7 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    tree->Branch("rho", &rho, "rho/F"); 
    if(saveGenParticles_){
       tree->Branch("genParticle_id","std::vector<int>",&genParticle_id);
+      tree->Branch("genParticle_isGammaFromMeson","std::vector<bool>",&genParticle_isGammaFromMeson);
       tree->Branch("genParticle_energy","std::vector<float>",&genParticle_energy);
       tree->Branch("genParticle_pt","std::vector<float>",&genParticle_pt);
       tree->Branch("genParticle_eta","std::vector<float>",&genParticle_eta);
@@ -1193,11 +1194,13 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    rho = *(rhos.product());
 
    genParticle_id.clear();
+   genParticle_isGammaFromMeson.clear();
    genParticle_energy.clear();
    genParticle_pt.clear();
    genParticle_eta.clear();
    genParticle_phi.clear();
    std::vector<GenParticle> genParts;
+   int counter=0;
    for(const auto& iGen : *(genParticles.product()))
    {
        bool isGoodParticle = false; 
@@ -1212,7 +1215,60 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
        genParticle_phi.push_back(iGen.phi());
        
        genParts.push_back(iGen); 
-   } 
+
+       // try to determine if it comes from a meson => go two generations up and check pdg id...
+       bool isGammaFromMeson=false;
+       if(iGen.pdgId()!=22) continue;
+       if(iGen.pt()<5) continue;
+       counter++;
+       //std::vector<const GenParticle*>::iterator itGen;
+       GenParticle *iGenClone = iGen.clone(); 
+       for(unsigned int iM=0; iM<iGenClone->numberOfMothers(); iM++){
+         const Candidate *this_mother = iGenClone->mother(iM);
+         if(this_mother->pdgId()==111 || this_mother->pdgId()==221 && isGammaFromMeson==false) {
+           isGammaFromMeson=true;
+           break;
+         }else{
+           for(unsigned int iMU=0; iMU<this_mother->numberOfMothers(); iMU++){
+             const Candidate *this_motherUp = this_mother->mother(iM);
+             if(this_motherUp->pdgId()==111 || this_motherUp->pdgId()==221 && isGammaFromMeson==false) {
+               isGammaFromMeson=true;
+               break;
+             }
+             //else{
+             //  for(unsigned int iMUU=0; iMUU<this_mother->numberOfMothers(); iMUU++){
+             //    const Candidate *this_motherUpUp = this_motherUp->mother(iMU);
+             //    if(this_motherUpUp->pdgId()==111 || this_motherUpUp->pdgId()==221) {
+             //      isGammaFromMeson=true;
+             //      break;
+             //    }
+             //  }
+             //}
+           }
+         }
+       } // end loop over mothers
+       
+       //const Candidate *mother = iGenClone->mother(0);
+       //if(abs(mother->pdgId())>100) isGammaFromMeson=true;
+       //else{
+       //  const Candidate *motherUp = mother->mother(0);
+       //  if(abs(motherUp->pdgId())>100) isGammaFromMeson=true;
+       //}
+
+       //if(mom->pdgId() == 22){
+       //}
+       //int this_id = mom->pdgId();
+       //while(mom->pdgId() == 22){
+       //  GenParticle *mother = mom->motherRef(0); // first mother if exists otherwise nullptr
+       //  mom = mother;
+       //  if(mom == nullptr) break;
+       //}
+
+       //int first_different_id = mom->pdgId();
+       //if (mom->status() == 2 && std::abs(first_different_id)>100) isGammaFromMeson=true;
+       //std::cout << "gamma " << counter << " pt=" << iGen.pt() << " eta=" << iGen.eta() << " isGammaFromMeson=" << isGammaFromMeson << std::endl;
+       genParticle_isGammaFromMeson.push_back(isGammaFromMeson);
+   } // loop over gen particles 
    
    int nGenParticles = genParts.size(); 
    //std::cout << "GenParticles size  : " << nGenParticles << std::endl;
