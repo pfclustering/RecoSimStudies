@@ -1224,16 +1224,16 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
        //std::vector<const GenParticle*>::iterator itGen;
        GenParticle *iGenClone = iGen.clone(); 
        for(unsigned int iM=0; iM<iGenClone->numberOfMothers(); iM++){
+         if(isGammaFromMeson==true) break;
          const Candidate *this_mother = iGenClone->mother(iM);
-         if(this_mother->pdgId()==111 || this_mother->pdgId()==221 && isGammaFromMeson==false) {
+         if(this_mother->pdgId()==111 || this_mother->pdgId()==221) {
            isGammaFromMeson=true;
-           break;
          }else{
            for(unsigned int iMU=0; iMU<this_mother->numberOfMothers(); iMU++){
+             if(isGammaFromMeson==true) break;
              const Candidate *this_motherUp = this_mother->mother(iM);
-             if(this_motherUp->pdgId()==111 || this_motherUp->pdgId()==221 && isGammaFromMeson==false) {
+             if(this_motherUp->pdgId()==111 || this_motherUp->pdgId()==221) {
                isGammaFromMeson=true;
-               break;
              }
              //else{
              //  for(unsigned int iMUU=0; iMUU<this_mother->numberOfMothers(); iMUU++){
