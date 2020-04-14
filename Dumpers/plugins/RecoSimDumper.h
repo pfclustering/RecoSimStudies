@@ -207,6 +207,7 @@ class RecoSimDumper : public edm::EDAnalyzer
       int nVtx;
       float rho;  
       std::vector<int> genParticle_id;
+      std::vector<bool> genParticle_isGammaFromMeson;
       std::vector<float> genParticle_energy;
       std::vector<float> genParticle_pt;
       std::vector<float> genParticle_eta;

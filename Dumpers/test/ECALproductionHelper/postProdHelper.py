@@ -10,7 +10,8 @@ def getOptions():
 
   parser = ArgumentParser(description='Production helper for Clustering studies', add_help=True)
 
-  parser.add_argument('--pl', type=str, dest='pl', help='full production label', default='photon_bla')
+  parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default='photon_bla')
+  parser.add_argument('--plo', type=str, dest='plo', help='full production label of output', default='photon_bla')
   parser.add_argument('--user', type=str, dest='user', help='user that produced the sample', default='mratti', choices=['anlyon', 'mratti'])
   parser.add_argument('--splitfactord', type=int, dest='splitfactord', help='number of jobs for the dumper', default=1)
   
@@ -21,11 +22,11 @@ if __name__ == "__main__":
   
   opt = getOptions()
   # input 
-  path = '/pnfs/psi.ch/cms/trivcat/store/user/{u}/EcalProd/{pl}/'.format(u=opt.user,pl=opt.pl)
+  path = '/pnfs/psi.ch/cms/trivcat/store/user/{u}/EcalProd/{pl}/'.format(u=opt.user,pl=opt.pli)
   expr = 'step3_nj*root'
   # output
   prepend = 'root://t3dcachedb.psi.ch:1094/'
-  samplefile = '../../data/samples/' + opt.pl + '.txt'
+  samplefile = '../../data/samples/' + opt.plo + '.txt'
 
   files = [f for f in glob.glob(path + expr)]
   files.sort() # sort in alphabetical order
@@ -39,10 +40,12 @@ if __name__ == "__main__":
     #print f
     rf = ROOT.TNetXNGFile.Open(f, 'r')
     if rf and rf.GetListOfKeys().Contains('Events'):
-      print 'file usable'
+      #print 'file usable'
       valid_files.append(f)
     else: 
       print 'file not usable, will continue'
+  
+  print '{} usable file / {} total files = {}'.format(len(valid_files), len(files), float(len(valid_files))/float(len(files)))
 
   if len(valid_files) < opt.splitfactord:
     #raise RuntimeError('Invalid splitfactor, please check')
@@ -72,7 +75,7 @@ if __name__ == "__main__":
     print 'Wrote list of files {}'.format(samplefiles[njd])
     print ''
 
-    command = 'cmsRun python/Cfg_RecoSimDumper_cfg.py outputFile=test/outputfiles/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=data/samples/{pl}_njd{njd}.txt'.format(pl=opt.pl, njd=njd)
+    command = 'cmsRun python/Cfg_RecoSimDumper_cfg.py outputFile=test/outputfiles/dumpedFiles/{pl}_njd{njd}.root inputFiles_load=data/samples/{pl}_njd{njd}.txt'.format(pl=opt.plo, njd=njd)
     
     print 'Command to run',
     print ''

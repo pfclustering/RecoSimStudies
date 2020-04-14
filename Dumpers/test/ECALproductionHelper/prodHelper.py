@@ -58,6 +58,7 @@ def getOptions():
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
+  parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
   parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
@@ -104,6 +105,7 @@ if __name__ == "__main__":
     prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   else:
     prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+  prodLabelIn = prodLabel if opt.pli==None else opt.pli # prod label of input for postProduction , can be different from output production label
   dopu = 1 if opt.pu=='wPU' else 0
   # force the noise conditions to be of 2021 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
@@ -131,7 +133,7 @@ if __name__ == "__main__":
   nevtspremixfile = 600 # current number of events in each premixed file
   npremixfiles = nevtsjob / nevtspremixfile + 1
   if opt.doreco and opt.custominput == None and opt.custominputdir == None: raise RuntimeError('you must supply the custom input, when running with doreco activated')
-  if opt.doreco and not opt.domultijob and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
+  if opt.doreco and not opt.dorecofromeos and not opt.domultijob and not os.path.isfile(opt.custominput): raise RuntimeError('custominput {} not found').format(opt.custominput)
   if opt.doreco and not opt.dorecofromeos and opt.domultijob and not os.path.isdir(opt.custominputdir): raise RuntimeError('custominputdir {} not found').format(opt.custominputdir)
   if opt.doreco and not opt.dorecofromeos and opt.domultijob: print 'A gentle reminder that if you are running with doreco and domultijob activated, you should use the same job splitting that was used for the original production'
   if not opt.doreco and opt.dorecofromeos: raise RuntimeError('You have to activate doreco option in order to run dorecofromeos')
@@ -141,15 +143,22 @@ if __name__ == "__main__":
   if opt.dorecofromeos and not opt.dodumperonly:
     inseprefix='root://eoscms.cern.ch/'
     # check directory exists
-    command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
-    out = subprocess.check_output(command, shell=True) # if not a dir, there will be an exception
-    files=out.split('\n')[0:-1] # get the list of files
-    if not files: raise RuntimeError('files not found')
-    alljobids = map(lambda x: int(x.split('_job')[1].split('_step2')[0]), files) # isolate the job number
-    njobs = max(alljobids)
-    print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
-    if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
-    nevtsjob = -1 
+    if opt.custominputdir != None:
+      command = 'xrdfs {sepx} ls {d}'.format(sepx=inseprefix, d=opt.custominputdir)
+      out = subprocess.check_output(command, shell=True) # if not a dir, there will be an exception
+      files=out.split('\n')[0:-1] # get the list of files
+      if not files: raise RuntimeError('files not found')
+      alljobids = map(lambda x: int(x.split('_job')[1].split('_step2')[0]), files) # isolate the job number
+      njobs = max(alljobids)
+      print 'Found njobs={} in {}'.format(njobs, opt.custominputdir)
+      if len(alljobids)!=njobs: print 'Will try to run nj={nj}, but I already now that nf={nf} will fail'.format(nj=njobs,nf=njobs-len(alljobids))
+      nevtsjob = -1 
+    elif opt.custominput != None:
+      command = 'xrdfs {sepx} stat {f}'.format(sepx=inseprefix, f=opt.custominput)
+      out = subprocess.check_output(command, shell=True) # if not a file, an ERROR will be present in the out
+      if 'ERROR' in out: 
+        print command
+        raise RuntimeError('file not found, exiting')
 
   if opt.docustomtime: 
     time1=opt.time.split(',')[0]
@@ -443,7 +452,7 @@ if __name__ == "__main__":
       ### running part
       'echo "Going to run postProdHelper.py"',
       'DATE_START=`date +%s`',
-      'python postProdHelper.py --pl {pl} --user {u} --splitfactord {spd}'.format(pl=prodLabel, u=user, spd=opt.splitfactord),
+      'python postProdHelper.py --pli {pli} --plo {plo} --user {u} --splitfactord {spd}'.format(pli=prodLabelIn,plo=prodLabel, u=user, spd=opt.splitfactord),
       'echo ""',
       'DATE_END=`date +%s`',
       'echo ""',

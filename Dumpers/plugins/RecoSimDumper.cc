@@ -173,6 +173,7 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    tree->Branch("rho", &rho, "rho/F"); 
    if(saveGenParticles_){
       tree->Branch("genParticle_id","std::vector<int>",&genParticle_id);
+      tree->Branch("genParticle_isGammaFromMeson","std::vector<bool>",&genParticle_isGammaFromMeson);
       tree->Branch("genParticle_energy","std::vector<float>",&genParticle_energy);
       tree->Branch("genParticle_pt","std::vector<float>",&genParticle_pt);
       tree->Branch("genParticle_eta","std::vector<float>",&genParticle_eta);
@@ -1099,8 +1100,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<std::vector<reco::SuperCluster> > retunedSuperClusterEB;
-   ev.getByToken(ebRetunedSuperClusterToken_, retunedSuperClusterEB);
    if(saveSuperCluster_ && useRetunedSC_) {
+      ev.getByToken(ebRetunedSuperClusterToken_, retunedSuperClusterEB);
       if (!retunedSuperClusterEB.isValid()) {
           std::cerr << "Analyze --> retunedSuperClusterEB not found" << std::endl; 
           return;
@@ -1108,8 +1109,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > retunedSuperClusterEE;
-   ev.getByToken(eeRetunedSuperClusterToken_, retunedSuperClusterEE);
    if(saveSuperCluster_ && useRetunedSC_) {
+      ev.getByToken(eeRetunedSuperClusterToken_, retunedSuperClusterEE);
       if (!retunedSuperClusterEE.isValid()) {
           std::cerr << "Analyze --> retunedSuperClusterEE not found" << std::endl; 
           return;
@@ -1117,8 +1118,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterEB;
-   ev.getByToken(ebDeepSuperClusterToken_, deepSuperClusterEB);
-   if(saveSuperCluster_) {
+   if(saveSuperCluster_ && useDeepSC_) {
+      ev.getByToken(ebDeepSuperClusterToken_, deepSuperClusterEB);
       if (!deepSuperClusterEB.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterEB not found" << std::endl; 
           return;
@@ -1126,8 +1127,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterEE;
-   ev.getByToken(eeDeepSuperClusterToken_, deepSuperClusterEE);
-   if(saveSuperCluster_) {
+   if(saveSuperCluster_  && useDeepSC_) {
+      ev.getByToken(eeDeepSuperClusterToken_, deepSuperClusterEE);
       if (!deepSuperClusterEE.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterEE not found" << std::endl; 
           return;
@@ -1135,8 +1136,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterLWPEB;
-   ev.getByToken(ebDeepSuperClusterLWPToken_, deepSuperClusterLWPEB);
-   if(saveSuperCluster_) {
+   if(saveSuperCluster_ && useDeepSC_) {
+      ev.getByToken(ebDeepSuperClusterLWPToken_, deepSuperClusterLWPEB);
       if (!deepSuperClusterLWPEB.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterLWPEB not found" << std::endl; 
           return;
@@ -1144,8 +1145,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterLWPEE;
-   ev.getByToken(eeDeepSuperClusterLWPToken_, deepSuperClusterLWPEE);
-   if(saveSuperCluster_) {
+   if(saveSuperCluster_ && useDeepSC_) {
+      ev.getByToken(eeDeepSuperClusterLWPToken_, deepSuperClusterLWPEE);
       if (!deepSuperClusterLWPEE.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterLWPEE not found" << std::endl; 
           return;
@@ -1153,8 +1154,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterTWPEB;
-   ev.getByToken(ebDeepSuperClusterTWPToken_, deepSuperClusterTWPEB);
-   if(saveSuperCluster_) {
+   if(saveSuperCluster_ && useDeepSC_) {
+      ev.getByToken(ebDeepSuperClusterTWPToken_, deepSuperClusterTWPEB);
       if (!deepSuperClusterTWPEB.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterTWPEB not found" << std::endl; 
           return;
@@ -1162,8 +1163,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > deepSuperClusterTWPEE;
-   ev.getByToken(eeDeepSuperClusterTWPToken_, deepSuperClusterTWPEE);
-   if(saveSuperCluster_) {
+      if(saveSuperCluster_ && useDeepSC_) {
+      ev.getByToken(eeDeepSuperClusterTWPToken_, deepSuperClusterTWPEE);
       if (!deepSuperClusterTWPEE.isValid()) {
           std::cerr << "Analyze --> deepSuperClusterTWPEE not found" << std::endl; 
           return;
@@ -1193,11 +1194,13 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    rho = *(rhos.product());
 
    genParticle_id.clear();
+   genParticle_isGammaFromMeson.clear();
    genParticle_energy.clear();
    genParticle_pt.clear();
    genParticle_eta.clear();
    genParticle_phi.clear();
    std::vector<GenParticle> genParts;
+   int counter=0;
    for(const auto& iGen : *(genParticles.product()))
    {
        bool isGoodParticle = false; 
@@ -1212,7 +1215,60 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
        genParticle_phi.push_back(iGen.phi());
        
        genParts.push_back(iGen); 
-   } 
+
+       // try to determine if it comes from a meson => go two generations up and check pdg id...
+       bool isGammaFromMeson=false;
+       if(iGen.pdgId()!=22) continue;
+       if(iGen.pt()<5) continue;
+       counter++;
+       //std::vector<const GenParticle*>::iterator itGen;
+       GenParticle *iGenClone = iGen.clone(); 
+       for(unsigned int iM=0; iM<iGenClone->numberOfMothers(); iM++){
+         const Candidate *this_mother = iGenClone->mother(iM);
+         if(this_mother->pdgId()==111 || this_mother->pdgId()==221 && isGammaFromMeson==false) {
+           isGammaFromMeson=true;
+           break;
+         }else{
+           for(unsigned int iMU=0; iMU<this_mother->numberOfMothers(); iMU++){
+             const Candidate *this_motherUp = this_mother->mother(iM);
+             if(this_motherUp->pdgId()==111 || this_motherUp->pdgId()==221 && isGammaFromMeson==false) {
+               isGammaFromMeson=true;
+               break;
+             }
+             //else{
+             //  for(unsigned int iMUU=0; iMUU<this_mother->numberOfMothers(); iMUU++){
+             //    const Candidate *this_motherUpUp = this_motherUp->mother(iMU);
+             //    if(this_motherUpUp->pdgId()==111 || this_motherUpUp->pdgId()==221) {
+             //      isGammaFromMeson=true;
+             //      break;
+             //    }
+             //  }
+             //}
+           }
+         }
+       } // end loop over mothers
+       
+       //const Candidate *mother = iGenClone->mother(0);
+       //if(abs(mother->pdgId())>100) isGammaFromMeson=true;
+       //else{
+       //  const Candidate *motherUp = mother->mother(0);
+       //  if(abs(motherUp->pdgId())>100) isGammaFromMeson=true;
+       //}
+
+       //if(mom->pdgId() == 22){
+       //}
+       //int this_id = mom->pdgId();
+       //while(mom->pdgId() == 22){
+       //  GenParticle *mother = mom->motherRef(0); // first mother if exists otherwise nullptr
+       //  mom = mother;
+       //  if(mom == nullptr) break;
+       //}
+
+       //int first_different_id = mom->pdgId();
+       //if (mom->status() == 2 && std::abs(first_different_id)>100) isGammaFromMeson=true;
+       //std::cout << "gamma " << counter << " pt=" << iGen.pt() << " eta=" << iGen.eta() << " isGammaFromMeson=" << isGammaFromMeson << std::endl;
+       genParticle_isGammaFromMeson.push_back(isGammaFromMeson);
+   } // loop over gen particles 
    
    int nGenParticles = genParts.size(); 
    //std::cout << "GenParticles size  : " << nGenParticles << std::endl;
@@ -2147,114 +2203,118 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    superCluster_psCluster_eta.resize((int)(superClusterEE.product())->size());
    superCluster_psCluster_phi.resize((int)(superClusterEE.product())->size());
 
-   int nRetunedSuperClusters = (retunedSuperClusterEB.product())->size() + (retunedSuperClusterEE.product())->size();
-   retunedSuperCluster_seedIndex.resize(nRetunedSuperClusters); 
-   retunedSuperCluster_dR_genScore.resize(nRetunedSuperClusters);
-   retunedSuperCluster_dR_simScore.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_old.resize(nRetunedSuperClusters);
-   retunedSuperCluster_simScore.resize(nRetunedSuperClusters);
-   retunedSuperCluster_n_shared_xtals.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_1MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_5MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_10MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_50MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_100MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_500MeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_fraction_1GeVCut.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_rechit_diff.resize(nRetunedSuperClusters);
-   retunedSuperCluster_sim_rechit_fraction.resize(nRetunedSuperClusters);
-   retunedSuperCluster_global_sim_rechit_fraction.resize(nRetunedSuperClusters);  
-   retunedSuperCluster_hgcal_caloToCluster.resize(nRetunedSuperClusters);  
-   retunedSuperCluster_hgcal_clusterToCalo.resize(nRetunedSuperClusters);   
-   retunedSuperCluster_sim_rechit_combined_fraction.resize(nRetunedSuperClusters);  
-   retunedSuperCluster_rechit_sim_combined_fraction.resize(nRetunedSuperClusters);    
-   retunedSuperCluster_pfClustersIndex.resize(nRetunedSuperClusters);
-   retunedSuperCluster_psCluster_energy.resize((int)(retunedSuperClusterEE.product())->size());
-   retunedSuperCluster_psCluster_eta.resize((int)(retunedSuperClusterEE.product())->size());
-   retunedSuperCluster_psCluster_phi.resize((int)(retunedSuperClusterEE.product())->size());
+   if (useRetunedSC_){
+      int nRetunedSuperClusters = (retunedSuperClusterEB.product())->size() + (retunedSuperClusterEE.product())->size();
+      retunedSuperCluster_seedIndex.resize(nRetunedSuperClusters); 
+      retunedSuperCluster_dR_genScore.resize(nRetunedSuperClusters);
+      retunedSuperCluster_dR_simScore.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_old.resize(nRetunedSuperClusters);
+      retunedSuperCluster_simScore.resize(nRetunedSuperClusters);
+      retunedSuperCluster_n_shared_xtals.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_1MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_5MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_10MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_50MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_100MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_500MeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_fraction_1GeVCut.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_rechit_diff.resize(nRetunedSuperClusters);
+      retunedSuperCluster_sim_rechit_fraction.resize(nRetunedSuperClusters);
+      retunedSuperCluster_global_sim_rechit_fraction.resize(nRetunedSuperClusters);  
+      retunedSuperCluster_hgcal_caloToCluster.resize(nRetunedSuperClusters);  
+      retunedSuperCluster_hgcal_clusterToCalo.resize(nRetunedSuperClusters);   
+      retunedSuperCluster_sim_rechit_combined_fraction.resize(nRetunedSuperClusters);  
+      retunedSuperCluster_rechit_sim_combined_fraction.resize(nRetunedSuperClusters);    
+      retunedSuperCluster_pfClustersIndex.resize(nRetunedSuperClusters);
+      retunedSuperCluster_psCluster_energy.resize((int)(retunedSuperClusterEE.product())->size());
+      retunedSuperCluster_psCluster_eta.resize((int)(retunedSuperClusterEE.product())->size());
+      retunedSuperCluster_psCluster_phi.resize((int)(retunedSuperClusterEE.product())->size());
+   }
 
-   int nDeepSuperClusters = (deepSuperClusterEB.product())->size() + (deepSuperClusterEE.product())->size();
-   deepSuperCluster_seedIndex.resize(nDeepSuperClusters); 
-   deepSuperCluster_dR_genScore.resize(nDeepSuperClusters);
-   deepSuperCluster_dR_simScore.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_old.resize(nDeepSuperClusters);
-   deepSuperCluster_simScore.resize(nDeepSuperClusters);
-   deepSuperCluster_n_shared_xtals.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_1MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_5MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_10MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_50MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_100MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_500MeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_fraction_1GeVCut.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_rechit_diff.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_rechit_fraction.resize(nDeepSuperClusters);
-   deepSuperCluster_global_sim_rechit_fraction.resize(nDeepSuperClusters);  
-   deepSuperCluster_hgcal_caloToCluster.resize(nDeepSuperClusters);  
-   deepSuperCluster_hgcal_clusterToCalo.resize(nDeepSuperClusters);
-   deepSuperCluster_sim_rechit_combined_fraction.resize(nDeepSuperClusters);  
-   deepSuperCluster_rechit_sim_combined_fraction.resize(nDeepSuperClusters);
-   deepSuperCluster_pfClustersIndex.resize(nDeepSuperClusters);
-   deepSuperCluster_psCluster_energy.resize((int)(deepSuperClusterEE.product())->size());
-   deepSuperCluster_psCluster_eta.resize((int)(deepSuperClusterEE.product())->size());
-   deepSuperCluster_psCluster_phi.resize((int)(deepSuperClusterEE.product())->size());
+   if (useDeepSC_){
+      int nDeepSuperClusters = (deepSuperClusterEB.product())->size() + (deepSuperClusterEE.product())->size();
+      deepSuperCluster_seedIndex.resize(nDeepSuperClusters); 
+      deepSuperCluster_dR_genScore.resize(nDeepSuperClusters);
+      deepSuperCluster_dR_simScore.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_old.resize(nDeepSuperClusters);
+      deepSuperCluster_simScore.resize(nDeepSuperClusters);
+      deepSuperCluster_n_shared_xtals.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_1MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_5MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_10MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_50MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_100MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_500MeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_fraction_1GeVCut.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_rechit_diff.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_rechit_fraction.resize(nDeepSuperClusters);
+      deepSuperCluster_global_sim_rechit_fraction.resize(nDeepSuperClusters);  
+      deepSuperCluster_hgcal_caloToCluster.resize(nDeepSuperClusters);  
+      deepSuperCluster_hgcal_clusterToCalo.resize(nDeepSuperClusters);
+      deepSuperCluster_sim_rechit_combined_fraction.resize(nDeepSuperClusters);  
+      deepSuperCluster_rechit_sim_combined_fraction.resize(nDeepSuperClusters);
+      deepSuperCluster_pfClustersIndex.resize(nDeepSuperClusters);
+      deepSuperCluster_psCluster_energy.resize((int)(deepSuperClusterEE.product())->size());
+      deepSuperCluster_psCluster_eta.resize((int)(deepSuperClusterEE.product())->size());
+      deepSuperCluster_psCluster_phi.resize((int)(deepSuperClusterEE.product())->size());
 
-   int nDeepSuperClusterLWPs = (deepSuperClusterLWPEB.product())->size() + (deepSuperClusterLWPEE.product())->size();
-   deepSuperClusterLWP_seedIndex.resize(nDeepSuperClusterLWPs); 
-   deepSuperClusterLWP_dR_genScore.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_dR_simScore.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_old.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_simScore.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_n_shared_xtals.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_1MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_5MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_10MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_50MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_100MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_500MeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_fraction_1GeVCut.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_rechit_diff.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_rechit_fraction.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_global_sim_rechit_fraction.resize(nDeepSuperClusterLWPs);  
-   deepSuperClusterLWP_hgcal_caloToCluster.resize(nDeepSuperClusterLWPs);  
-   deepSuperClusterLWP_hgcal_clusterToCalo.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_sim_rechit_combined_fraction.resize(nDeepSuperClusterLWPs);  
-   deepSuperClusterLWP_rechit_sim_combined_fraction.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_pfClustersIndex.resize(nDeepSuperClusterLWPs);
-   deepSuperClusterLWP_psCluster_energy.resize((int)(deepSuperClusterLWPEE.product())->size());
-   deepSuperClusterLWP_psCluster_eta.resize((int)(deepSuperClusterLWPEE.product())->size());
-   deepSuperClusterLWP_psCluster_phi.resize((int)(deepSuperClusterLWPEE.product())->size());
+      int nDeepSuperClusterLWPs = (deepSuperClusterLWPEB.product())->size() + (deepSuperClusterLWPEE.product())->size();
+      deepSuperClusterLWP_seedIndex.resize(nDeepSuperClusterLWPs); 
+      deepSuperClusterLWP_dR_genScore.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_dR_simScore.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_old.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_simScore.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_n_shared_xtals.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_1MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_5MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_10MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_50MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_100MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_500MeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_fraction_1GeVCut.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_rechit_diff.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_rechit_fraction.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_global_sim_rechit_fraction.resize(nDeepSuperClusterLWPs);  
+      deepSuperClusterLWP_hgcal_caloToCluster.resize(nDeepSuperClusterLWPs);  
+      deepSuperClusterLWP_hgcal_clusterToCalo.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_sim_rechit_combined_fraction.resize(nDeepSuperClusterLWPs);  
+      deepSuperClusterLWP_rechit_sim_combined_fraction.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_pfClustersIndex.resize(nDeepSuperClusterLWPs);
+      deepSuperClusterLWP_psCluster_energy.resize((int)(deepSuperClusterLWPEE.product())->size());
+      deepSuperClusterLWP_psCluster_eta.resize((int)(deepSuperClusterLWPEE.product())->size());
+      deepSuperClusterLWP_psCluster_phi.resize((int)(deepSuperClusterLWPEE.product())->size());
 
-   int nDeepSuperClusterTWPs = (deepSuperClusterTWPEB.product())->size() + (deepSuperClusterTWPEE.product())->size();
-   deepSuperClusterTWP_seedIndex.resize(nDeepSuperClusterTWPs); 
-   deepSuperClusterTWP_dR_genScore.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_dR_simScore.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_old.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_simScore.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_n_shared_xtals.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_1MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_5MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_10MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_50MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_100MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_500MeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_fraction_1GeVCut.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_rechit_diff.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_rechit_fraction.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_global_sim_rechit_fraction.resize(nDeepSuperClusterTWPs);  
-   deepSuperClusterTWP_hgcal_caloToCluster.resize(nDeepSuperClusterTWPs);  
-   deepSuperClusterTWP_hgcal_clusterToCalo.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_sim_rechit_combined_fraction.resize(nDeepSuperClusterTWPs);  
-   deepSuperClusterTWP_rechit_sim_combined_fraction.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_pfClustersIndex.resize(nDeepSuperClusterTWPs);
-   deepSuperClusterTWP_psCluster_energy.resize((int)(deepSuperClusterTWPEE.product())->size());
-   deepSuperClusterTWP_psCluster_eta.resize((int)(deepSuperClusterTWPEE.product())->size());
-   deepSuperClusterTWP_psCluster_phi.resize((int)(deepSuperClusterTWPEE.product())->size());
-  
+      int nDeepSuperClusterTWPs = (deepSuperClusterTWPEB.product())->size() + (deepSuperClusterTWPEE.product())->size();
+      deepSuperClusterTWP_seedIndex.resize(nDeepSuperClusterTWPs); 
+      deepSuperClusterTWP_dR_genScore.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_dR_simScore.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_old.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_simScore.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_n_shared_xtals.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_1MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_5MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_10MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_50MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_100MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_500MeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_fraction_1GeVCut.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_rechit_diff.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_rechit_fraction.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_global_sim_rechit_fraction.resize(nDeepSuperClusterTWPs);  
+      deepSuperClusterTWP_hgcal_caloToCluster.resize(nDeepSuperClusterTWPs);  
+      deepSuperClusterTWP_hgcal_clusterToCalo.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_sim_rechit_combined_fraction.resize(nDeepSuperClusterTWPs);  
+      deepSuperClusterTWP_rechit_sim_combined_fraction.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_pfClustersIndex.resize(nDeepSuperClusterTWPs);
+      deepSuperClusterTWP_psCluster_energy.resize((int)(deepSuperClusterTWPEE.product())->size());
+      deepSuperClusterTWP_psCluster_eta.resize((int)(deepSuperClusterTWPEE.product())->size());
+      deepSuperClusterTWP_psCluster_phi.resize((int)(deepSuperClusterTWPEE.product())->size());
+   }
+
    hitsAndEnergies_CaloPart.clear();
    hitsAndEnergies_CaloPart_1MeVCut.clear();
    hitsAndEnergies_CaloPart_5MeVCut.clear();
@@ -2603,17 +2663,16 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){ 
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_PFCluster.at(iPFCl),&hitsAndEnergies_CaloPart.at(iCalo),recHitsEB,recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE);    
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_10MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_10MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_50MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_50MeVCut.at(iCalo), recHitsEB,recHitsEE);  
                  std::vector<double> scores_100MeVCut = getScores(&hitsAndEnergies_PFCluster.at(iPFCl), &hitsAndEnergies_CaloPart_100MeVCut.at(iCalo), recHitsEB,recHitsEE);              
-                 //if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
-                 //    std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
-                 //    return;
-                 //}
-
                  if(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iPFCluster.eta(),iPFCluster.phi())<0.1) dR_simScore.push_back(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iPFCluster.eta(),iPFCluster.phi())); 
                  else dR_simScore.push_back(999.);  
  
@@ -2840,6 +2899,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -2847,10 +2910,6 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
                  std::vector<double> scores_50MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_50MeVCut.at(iCalo), recHitsEB,recHitsEE);  
                  std::vector<double> scores_100MeVCut = getScores(&hitsAndEnergies_SuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_100MeVCut.at(iCalo), recHitsEB,recHitsEE);                
                  if(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iSuperCluster.eta(),iSuperCluster.phi())<0.1) dR_simScore.push_back(deltaR(caloParticle_position.eta(),caloParticle_position.phi(),iSuperCluster.eta(),iSuperCluster.phi())); 
-                 //if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
-                 //    std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
-                 //    return;
-                 //}
 
                  else dR_simScore.push_back(999.);
           
@@ -3055,6 +3114,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_SuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3316,6 +3379,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3523,6 +3590,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_RetunedSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3778,6 +3849,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -3985,6 +4060,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4240,6 +4319,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4447,6 +4530,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterLWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4702,6 +4789,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEB.at(iSC), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 
@@ -4909,6 +5000,10 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
           if(saveCaloParticles_){
              for(unsigned int iCalo=0; iCalo<caloParts.size(); iCalo++){
                  caloParticle_position = calculateAndSetPositionActual(&hitsAndEnergies_CaloPart.at(iCalo), 7.4, 3.1, 1.2, 4.2, 0.89, 0.,false);
+                 if (caloParticle_position == GlobalPoint(-999999., -999999., -999999.)) {
+                     std::cout << "Invalid position for caloparticle, skipping event" << std::endl;
+                     return;
+                 }
                  std::vector<double> scores = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_1MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_1MeVCut.at(iCalo), recHitsEB, recHitsEE); 
                  std::vector<double> scores_5MeVCut = getScores(&hitsAndEnergies_DeepSuperClusterTWPEE.at(iSC_tmp), &hitsAndEnergies_CaloPart_5MeVCut.at(iCalo), recHitsEB, recHitsEE); 

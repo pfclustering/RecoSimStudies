@@ -180,7 +180,8 @@ if options.dorecofile == 1:
    )
    process.RECOSIMoutput.outputCommands.extend(['keep *_mix_MergedCaloTruth_*',
                                                #'keep *PCaloHit*_g4SimHits_EcalHitsE*_*',
-                                                'keep *_particleFlowRecHitECAL_*_*'])
+                                                'keep *_particleFlowRecHitECAL_*_*',
+                                                'keep *_*towerMaker*_*_*'])
 
 if options.dominiaodfile == 1:
    process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
