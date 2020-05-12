@@ -25,7 +25,6 @@ def getOptions():
 
   parser.add_argument('--pu', type=str, dest='pu', help='PU configuration', default='noPU', choices=['noPU', 'wPU'])
 
-  #parser.add_argument('--noisecond', type=int, dest='noisecond', help='which noise conditions do you want', default=2023)
   parser.add_argument('--thrslumi', type=int, dest='thrslumi', help='based on which integrated luminosity were the thrs computed', default=450, choices=[2021, 2023, 180, 235, 315, 400, 450, 550])
   parser.add_argument('--pfrhmult', type=float, dest='pfrhmult', help='how many sigma of the noise to use for PFRH thresholds', default=1.)
   parser.add_argument('--pfrhmultbelow2p5', type=float, dest='pfrhmultbelow2p5', help='sigma of the noise for PFRH thresholds for |eta|<2.5', default=0.)
@@ -118,6 +117,7 @@ if __name__ == "__main__":
     thrlumi = '180'
   elif thrlumi == 2023:
     thrlumi = '450'
+  print 'lumiThrs: {a}'.format(a=thrlumi)  
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
