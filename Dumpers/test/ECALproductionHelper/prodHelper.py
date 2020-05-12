@@ -25,7 +25,7 @@ def getOptions():
 
   parser.add_argument('--pu', type=str, dest='pu', help='PU configuration', default='noPU', choices=['noPU', 'wPU'])
 
-  parser.add_argument('--noisecond', type=int, dest='noisecond', help='which noise conditions do you want', default=2023)
+  parser.add_argument('--thrslumi', type=int, dest='thrslumi', help='based on which integrated luminosity were the thrs computed', default=450, choices=[2021, 2023, 180, 235, 315, 400, 450, 550])
   parser.add_argument('--pfrhmult', type=float, dest='pfrhmult', help='how many sigma of the noise to use for PFRH thresholds', default=1.)
   parser.add_argument('--pfrhmultbelow2p5', type=float, dest='pfrhmultbelow2p5', help='sigma of the noise for PFRH thresholds for |eta|<2.5', default=0.)
   parser.add_argument('--pfrhmultabove2p5', type=float, dest='pfrhmultabove2p5', help='sigma of the noise for PFRH thresholds for |eta|>2.5', default=0.)
@@ -102,25 +102,31 @@ if __name__ == "__main__":
   thrLabel = thrLabelEB + thrLabelEE
   safetyLabel = 'noMargin' if not opt.dosafetymargin else 'wMargin'
   if opt.ch != 'QCD':
-    prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{e}_{g}_{d}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   else:
-    prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
   prodLabelIn = prodLabel if opt.pli==None else opt.pli # prod label of input for postProduction , can be different from output production label
   dopu = 1 if opt.pu=='wPU' else 0
   # force the noise conditions to be of 2021 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
-    noisecnd = '2021'
+    thrlumi = '180'
   else:
-    noisecnd = opt.noisecond
+    thrlumi = opt.thrslumi
+  # make so that '2021' (=TL180) and '2023' (=TL450) are supported
+  if thrlumi == 2021:
+    thrlumi = '180'
+  elif thrlumi == 2023:
+    thrlumi = '450'
+  print 'lumiThrs: {a}'.format(a=thrlumi)  
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
   dorefseed = 1 if opt.dorefseed else 0
-  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(noisecnd))) \
-     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(noisecnd))) \
-     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(noisecnd))) \
-     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(noisecnd))): 
+  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_TL{}.txt'.format(thrlumi))) \
+     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_TL{}.txt'.format(thrlumi))) \
+     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_TL{}.txt'.format(thrlumi))) \
+     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_TL{}.txt'.format(thrlumi))): 
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
@@ -288,7 +294,7 @@ if __name__ == "__main__":
   else:
     dorecofile=0
     dominiaodfile=1
-  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} noiseCond={nsc} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, nsc=noisecnd, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} thrsLumi={thl} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, thl=thrlumi, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   if opt.ch == 'QCD':

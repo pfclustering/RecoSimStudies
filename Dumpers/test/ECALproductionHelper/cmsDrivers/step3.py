@@ -19,11 +19,11 @@ options.register ("dominiaodfile",
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,          # string, int, or float
                   "want to produce miniAOD file?")
-options.register ("noiseCond",
-                  2023, # default value
+options.register ("thrsLumi",
+                  450, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,          # string, int, or float
-                  "noise conditions")
+                  "lumi on which thrs are based")
 options.register ("pfrhMultbelow2p5",
                   1.0, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
@@ -286,17 +286,17 @@ process.es_prefer = cms.ESPrefer("EcalTrivialConditionRetriever","myCond")
 if options.doRefPfrh == 0:
   # load EB thrs file
   if options.doRingAverageEB == 0:
-    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.noiseCond))
+    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_TL{l}.txt".format(l=options.thrsLumi))
   else:
-    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged_{y}.txt".format(y=options.noiseCond))
+    EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_ringaveraged_TL{l}.txt".format(l=options.thrsLumi))
   # load EE thrs file
   if options.doRingAverageEE == 0:
-    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.noiseCond))
+    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_TL{l}.txt".format(l=options.thrsLumi))
   else:
-    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_{y}.txt".format(y=options.noiseCond))
+    EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_ringaveraged_TL{l}.txt".format(l=options.thrsLumi))
 else: #no ringAvg for reference thrs
-  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_{y}.txt".format(y=options.noiseCond))
-  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_{y}.txt".format(y=options.noiseCond))
+  EB_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EB_TL{l}.txt".format(l=options.thrsLumi))
+  EE_pfrhthr_file = cms.untracked.string("./data/noise/PFRecHitThresholds_EE_TL{l}.txt".format(l=options.thrsLumi))
 
 
 ### set pfrh thresholds
