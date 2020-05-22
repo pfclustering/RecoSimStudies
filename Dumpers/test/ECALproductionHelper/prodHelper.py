@@ -553,16 +553,16 @@ if __name__ == "__main__":
     postprod_dependencies = '--dependency=afterany'
     for nj in range(0,njobs):
 
-      sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
+      sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} --mem 2500 launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
 
-      sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
+      sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --mem 2000 --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
 
-      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --mem 4000 --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
       if opt.doreco: # strip the dependency away
-        sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+        sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --mem 4000 launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
    
       if opt.ch == 'QCD':  
-        sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
+        sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --mem 4000 --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
 
       postprod_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
 
