@@ -57,16 +57,17 @@ options.register('doFlatEnergy',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "generate flat in energy, otherwise flat in pt")
-options.register('year',
-                 2021,
+options.register ("yearGT",
+                  450, # default value
+                  VarParsing.multiplicity.singleton, # singleton or list
+                  VarParsing.varType.int,          # string, int, or float
+                  "year on which conditions of detectors other than ECAL are based")
+options.register('lumi',
+                 450,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "year of data-taking")
-options.register('doDefaultECALtags',
-                 0,
-                 VarParsing.multiplicity.singleton,
-                 VarParsing.varType.int,
-                 "use default ECAL tags in GT, except for PFRH tag")
+                 "lumi on which ECAL conditions are based, except for PFRH&PFSeeding")
+                  
 options.parseArguments()
 print options
 
@@ -135,14 +136,13 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2021_realistic_v5', '')
 
 # Override ECAL tags
-if options.doDefaultECALtags == 0:
-  print 'Will override following ECAL tags'
-  process.GlobalTag.toGet = cms.VPSet()
-  from override_ECAL_tags import override_tags
-  for rec,tag in override_tags[options.year].items():
-    process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
-    print rec,tag
-    #print process.GlobalTag.toGet[0]
+print 'Will override following ECAL tags'
+process.GlobalTag.toGet = cms.VPSet()
+from override_ECAL_tags import override_tags
+for rec,tag in override_tags[options.lumi].items():
+  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+  print rec,tag
+  #print process.GlobalTag.toGet[0]
 
 process.generator = cms.EDProducer("CloseByParticleMultiGunProducer",
     PGunParameters = cms.PSet(

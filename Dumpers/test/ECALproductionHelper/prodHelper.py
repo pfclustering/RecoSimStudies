@@ -12,7 +12,7 @@ def getOptions():
 
   parser.add_argument('-v','--ver', type=str, dest='ver', help='version of production, e.g. V00_v00', default='V00_v00')
   #parser.add_argument('-r','--rel', type=str, dest='rel', help='cmssw release', default='10_6_1_patch1')
-  parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
+  parser.add_argument('-l', '--lumi', type=int, dest='lumi', help='integrated luminosity on which ECAL conditions are based, except for PFRH&PFSeeding', default=450, choices=[150,180,235,315,400,450]) 
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
   parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD'])
@@ -59,7 +59,6 @@ def getOptions():
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
   parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
-  parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
 
@@ -102,22 +101,20 @@ if __name__ == "__main__":
   thrLabel = thrLabelEB + thrLabelEE
   safetyLabel = 'noMargin' if not opt.dosafetymargin else 'wMargin'
   if opt.ch != 'QCD':
-    prodLabel='{c}_{e}_{g}_{d}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{e}_{g}_{d}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_l{l}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,l=opt.lumi,v=opt.ver,n=opt.nevts)
   else:
-    prodLabel='{c}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_l{l}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,l=opt.lumi,v=opt.ver,n=opt.nevts)
   prodLabelIn = prodLabel if opt.pli==None else opt.pli # prod label of input for postProduction , can be different from output production label
   dopu = 1 if opt.pu=='wPU' else 0
-  # force the noise conditions to be of 2021 for reference thresholds
+  # force the noise conditions to be of TL180 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
     thrlumi = '180'
   else:
     thrlumi = opt.thrslumi
-  # make so that '2021' (=TL180) and '2023' (=TL450) are supported
-  if thrlumi == 2021:
-    thrlumi = '180'
-  elif thrlumi == 2023:
-    thrlumi = '450'
   print 'lumiThrs: {a}'.format(a=thrlumi)  
+  # set the year to choose the global tag, this will decide the detector conditions other than ECAL
+  yearGT = 2021 if (opt.lumi == 150 or opt.lumi== 180 or opt.lumi == 235) else if (opt.lumi == 400 or opt.lumi == 450) else None
+  if yearGT == None: raise RuntimeError('year for GT is not valid, please check')
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
@@ -130,7 +127,6 @@ if __name__ == "__main__":
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
-  dodefaultecaltags = 1 if opt.dodefaultecaltags else 0
   nthr = 8 if opt.domultithread else 1
   if opt.domultijob and opt.njobs <= 1: raise RuntimeError('when running multiple jobs, the number of parallel jobs should be larger than 1')
   if opt.domultijob and opt.nevts % opt.njobs != 0 and not opt.dorecofromeos: raise RuntimeError('cannot split events in njobs evenly, please change njobs / nevts')
@@ -274,10 +270,10 @@ if __name__ == "__main__":
     if opt.npart!=None:
       npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   elif opt.ch == 'QCD':
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   elif opt.doreco:
     step1_cmsRun = 'dummy'
@@ -285,7 +281,7 @@ if __name__ == "__main__":
   else:
     raise RuntimeError('this option is not currently supported')
   ## step2  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+  step2_cmsRun = 'cmsRun {jo} yearGT={y} nThr={nt} lumi={l}'.format(jo=target_drivers[1], nt=nthr, l=opt.lumi, y=yearGT)
   step2_cmsRun_add = ('nPremixFiles={npf}'.format(npf=npremixfiles) if dopu else '') + (' randomizePremix=1' if opt.domultijob and dopu else ' ')
   ## step3
   if opt.ch != 'QCD':
@@ -294,11 +290,11 @@ if __name__ == "__main__":
   else:
     dorecofile=0
     dominiaodfile=1
-  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} thrsLumi={thl} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, thl=thrlumi, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  step3_cmsRun = 'cmsRun {jo} yearGT={y} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} thrsLumi={thl} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} lumi={l} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, thl=thrlumi, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, l=opt.lumi, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob, y=yearGT)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   if opt.ch == 'QCD':
-    step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags) 
+    step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, l=opt.lumi, ddet=dodefaultecaltags) 
     cmsRuns.append(step4_cmsRun)
     cmsRuns_add.append('')  
   
