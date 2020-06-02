@@ -72,6 +72,7 @@ override_tags[450]['EcalTPGPedestalsRcd'] = 'EcalTPGPedestals_TL450fb_v1cor_mc'
 override_tags[450]['EcalADCToGeVConstantRcd'] = 'EcalADCToGeVConstant_2010_V2_Bon_mc' # std for MC
 override_tags[450]['EcalLaserAlphasRcd'] = 'EcalLaserAlphas_EB_sic1_btcp1_EE_sic1_btcp1' # alpha = 1
 
+'''
 for r in ['EcalLaserAPDPNRatiosRcd', 'EcalPedestalsRcd', 'EcalSRSettingsRcd', 'EcalIntercalibConstantsMCRcd', 'EcalIntercalibConstantsRcd', 'EcalTPGLinearizationConstRcd', 'EcalTPGPedestalsRcd', 'EcalADCToGeVConstantRcd', 'EcalLaserAlphasRcd']:
 
   print '\n ==> Checking record = {}'.format(r) 
@@ -79,7 +80,7 @@ for r in ['EcalLaserAPDPNRatiosRcd', 'EcalPedestalsRcd', 'EcalSRSettingsRcd', 'E
   for i in [150,180,235,315,400,450]:
   
     print '  TL{}: {}'.format(i,override_tags[i][r])
-
+'''
 
 
 
