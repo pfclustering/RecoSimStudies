@@ -113,8 +113,12 @@ if __name__ == "__main__":
     thrlumi = opt.thrslumi
   print 'lumiThrs: {a}'.format(a=thrlumi)  
   # set the year to choose the global tag, this will decide the detector conditions other than ECAL
-  yearGT = 2021 if (opt.lumi == 150 or opt.lumi== 180 or opt.lumi == 235) else if (opt.lumi == 400 or opt.lumi == 450) else None
-  if yearGT == None: raise RuntimeError('year for GT is not valid, please check')
+  if (opt.lumi == 150 or opt.lumi== 180 or opt.lumi == 235):
+    yearGT=2021
+  else if (opt.lumi == 400 or opt.lumi == 450) 
+    yearGT=2023 
+  else:
+    raise RuntimeError('year for GT is not valid, please check')
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
