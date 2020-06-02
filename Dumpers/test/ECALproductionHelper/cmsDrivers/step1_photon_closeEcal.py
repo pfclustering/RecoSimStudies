@@ -11,62 +11,62 @@ options.register('etmin',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "ET or E min depending on doFlatEnergy")
+                'ET or E min depending on doFlatEnergy')
 options.register('etmax',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "ET or E max depending on doFlatEnergy")
+                'ET or E max depending on doFlatEnergy')
 options.register('rmin',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "Radius min")
+                'Radius min')
 options.register('rmax',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "Radius max")
+                'Radius max')
 options.register('zmin',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "Z min")
+                'Z min')
 options.register('zmax',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.float,
-                "Zmax")
+                'Zmax')
 options.register('np',
                  1,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                "Number of Particles")
+                'Number of Particles')
 options.register('nThr',
                  1,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                "Number of threads")
+                'Number of threads')
 options.register('seedOffset',
                  1,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "Seed offset")
+                 'Seed offset')
 options.register('doFlatEnergy',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "generate flat in energy, otherwise flat in pt")
-options.register ("yearGT",
+                 'generate flat in energy, otherwise flat in pt')
+options.register ('yearGT',
                   450, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,          # string, int, or float
-                  "year on which conditions of detectors other than ECAL are based")
+                  'year on which conditions of detectors other than ECAL are based')
 options.register('lumi',
                  450,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "lumi on which ECAL conditions are based, except for PFRH&PFSeeding")
+                 'lumi on which ECAL conditions are based, except for PFRH&PFSeeding')
                   
 options.parseArguments()
 print options
@@ -98,7 +98,7 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 # Input source
-process.source = cms.Source("EmptySource")
+process.source = cms.Source('EmptySource')
 
 process.options = cms.untracked.PSet()
 
@@ -111,7 +111,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
+process.RAWSIMoutput = cms.OutputModule('PoolOutputModule',
     SelectEvents = cms.untracked.PSet(
         SelectEvents = cms.vstring('generation_step')
     ),
@@ -130,8 +130,8 @@ process.RAWSIMoutput = cms.OutputModule("PoolOutputModule",
 # Additional output definition
 
 # Other statements
-process.XMLFromDBSource.label = cms.string("Extended")
-process.genstepfilter.triggerConditions=cms.vstring("generation_step")
+process.XMLFromDBSource.label = cms.string('Extended')
+process.genstepfilter.triggerConditions=cms.vstring('generation_step')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '106X_upgrade2021_realistic_v5', '')
 
@@ -144,7 +144,7 @@ for rec,tag in override_tags[options.lumi].items():
   print rec,tag
   #print process.GlobalTag.toGet[0]
 
-process.generator = cms.EDProducer("CloseByParticleMultiGunProducer",
+process.generator = cms.EDProducer('CloseByParticleMultiGunProducer',
     PGunParameters = cms.PSet(
         PartID = cms.vint32(22, 22),
         MaxPt = cms.double(options.etmax),

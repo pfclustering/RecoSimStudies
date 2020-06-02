@@ -13,17 +13,17 @@ options.register('nThr',
                  1,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                "Number of threads")
-options.register ("yearGT",
+                'Number of threads')
+options.register ('yearGT',
                   450, # default value
                   VarParsing.multiplicity.singleton, # singleton or list
                   VarParsing.varType.int,          # string, int, or float
-                  "year on which conditions of detectors other than ECAL are based")
+                  'year on which conditions of detectors other than ECAL are based')
 options.register('lumi',
                  450,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "lumi on which ECAL conditions are based, except for PFRH&PFSeeding")
+                 'lumi on which ECAL conditions are based, except for PFRH&PFSeeding')
 options.parseArguments()
 print options
 
@@ -49,7 +49,7 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 # Input source
-process.source = cms.Source("PoolSource",
+process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring('file:step3.root'),
     secondaryFileNames = cms.untracked.vstring()
 )
@@ -67,7 +67,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-process.NANOAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
+process.NANOAODSIMoutput = cms.OutputModule('NanoAODOutputModule',
     compressionAlgorithm = cms.untracked.string('LZMA'),
     compressionLevel = cms.untracked.int32(9),
     dataset = cms.untracked.PSet(
