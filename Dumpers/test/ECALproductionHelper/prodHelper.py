@@ -115,7 +115,7 @@ if __name__ == "__main__":
   # set the year to choose the global tag, this will decide the detector conditions other than ECAL
   if (opt.lumi == 150 or opt.lumi== 180 or opt.lumi == 235):
     yearGT=2021
-  else if (opt.lumi == 400 or opt.lumi == 450):
+  elif (opt.lumi == 400 or opt.lumi == 450):
     yearGT=2023 
   else:
     raise RuntimeError('year for GT is not valid, please check')
