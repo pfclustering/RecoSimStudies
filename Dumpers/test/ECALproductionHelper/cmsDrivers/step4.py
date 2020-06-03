@@ -13,17 +13,17 @@ options.register('nThr',
                  1,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                "Number of threads")
-options.register('year',
-                 2021,
+                'Number of threads')
+options.register ('yearGT',
+                  450, # default value
+                  VarParsing.multiplicity.singleton, # singleton or list
+                  VarParsing.varType.int,          # string, int, or float
+                  'year on which conditions of detectors other than ECAL are based')
+options.register('lumi',
+                 450,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
-                 "year of data-taking")
-options.register('doDefaultECALtags',
-                 0,
-                 VarParsing.multiplicity.singleton,
-                 VarParsing.varType.int,
-                 "use default ECAL tags in GT, except for PFRH tag")
+                 'lumi on which ECAL conditions are based, except for PFRH&PFSeeding')
 options.parseArguments()
 print options
 
@@ -49,7 +49,7 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 # Input source
-process.source = cms.Source("PoolSource",
+process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring('file:step3.root'),
     secondaryFileNames = cms.untracked.vstring()
 )
@@ -67,7 +67,7 @@ process.configurationMetadata = cms.untracked.PSet(
 
 # Output definition
 
-process.NANOAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
+process.NANOAODSIMoutput = cms.OutputModule('NanoAODOutputModule',
     compressionAlgorithm = cms.untracked.string('LZMA'),
     compressionLevel = cms.untracked.int32(9),
     dataset = cms.untracked.PSet(
@@ -82,23 +82,22 @@ process.NANOAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
 
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-if options.year == 2021:
+if options.yearGT == 2021:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2021_realistic_v3', '')
-elif options.year == 2023:
+elif options.yearGT == 2023:
   process.GlobalTag = GlobalTag(process.GlobalTag, '106X_mcRun3_2023_realistic_v3', '')
 else: 
   raise RuntimeError('Global tag not set properly, check logic')
 
 
 # Override ECAL tags
-if options.doDefaultECALtags == 0:
-  print 'Will override following ECAL tags'
-  process.GlobalTag.toGet = cms.VPSet()
-  from override_ECAL_tags import override_tags
-  for rec,tag in override_tags[options.year].items():
-    process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
-    print rec,tag
-    #print process.GlobalTag.toGet[0]
+print 'Will override following ECAL tags'
+process.GlobalTag.toGet = cms.VPSet()
+from override_ECAL_tags import override_tags
+for rec,tag in override_tags[options.lumi].items():
+  process.GlobalTag.toGet.append( cms.PSet(record = cms.string(rec), tag = cms.string(tag) )   )
+  print rec,tag
+  #print process.GlobalTag.toGet[0]
 
 
 # Path and EndPath definitions
