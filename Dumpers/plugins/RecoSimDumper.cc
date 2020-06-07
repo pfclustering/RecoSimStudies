@@ -150,6 +150,7 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    saveSimhits_             	  = iConfig.getParameter<bool>("saveSimhits");
    saveRechits_                   = iConfig.getParameter<bool>("saveRechits");
    savePFRechits_                 = iConfig.getParameter<bool>("savePFRechits"); 
+   saveAllPFRechits_              = iConfig.getParameter<bool>("saveAllPFRechits"); 
    savePFCluster_                 = iConfig.getParameter<bool>("savePFCluster");
    savePFClusterhits_             = iConfig.getParameter<bool>("savePFClusterhits");
    saveSuperCluster_              = iConfig.getParameter<bool>("saveSuperCluster");
@@ -352,6 +353,14 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
       tree->Branch("pfRecHit_unClustered_ieta","std::vector<int>",&pfRecHit_unClustered_ieta); 
       tree->Branch("pfRecHit_unClustered_iphi","std::vector<int>",&pfRecHit_unClustered_iphi);
       tree->Branch("pfRecHit_unClustered_iz","std::vector<int>",&pfRecHit_unClustered_iz);     
+   }
+   if(saveAllPFRechits_){ 
+      tree->Branch("pfRecHit_energy","std::vector<float>",&pfRecHit_energy);
+      tree->Branch("pfRecHit_eta","std::vector<float>",&pfRecHit_eta); 
+      tree->Branch("pfRecHit_phi","std::vector<float>",&pfRecHit_phi);
+      tree->Branch("pfRecHit_ieta","std::vector<int>",&pfRecHit_ieta); 
+      tree->Branch("pfRecHit_iphi","std::vector<int>",&pfRecHit_iphi);
+      tree->Branch("pfRecHit_iz","std::vector<int>",&pfRecHit_iz);     
    }
    if(savePFCluster_){
       tree->Branch("pfCluster_energy","std::vector<float>",&pfCluster_energy);
@@ -1568,6 +1577,13 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    pfRecHit_unClustered_ieta.clear();
    pfRecHit_unClustered_iphi.clear();
    pfRecHit_unClustered_iz.clear();
+
+   pfRecHit_energy.clear();
+   pfRecHit_eta.clear();
+   pfRecHit_phi.clear();
+   pfRecHit_ieta.clear();
+   pfRecHit_iphi.clear();
+   pfRecHit_iz.clear();
 
    int nPFClusters = (pfClusters.product())->size();
    pfCluster_energy.clear();
