@@ -58,6 +58,7 @@ def getOptions():
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
+  parser.add_argument('--dosubmit', dest='dosubmit', help='do submission', action='store_true', default=False)
   parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
   
   return parser.parse_args()
@@ -593,7 +594,7 @@ if __name__ == "__main__":
     dumper_dependencies = ':$jid_pp'
     # dumper
     for njd in range(0, opt.splitfactord):
-      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[4],dd=dumper_dependencies)
+      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --mem 4000 --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[4],dd=dumper_dependencies)
       submitter_template.append(sbatch_command_dumper)
       submitter_template.append('echo "$jid_njd%i"' % njd)
       submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (njd,njd))
@@ -606,4 +607,12 @@ if __name__ == "__main__":
   with open(submitterFile, 'w') as f:
     f.write(submitter_template)
 
+  # submit
+  if opt.dosubmit:
+    os.chdir(prodDir)
+    os.system('chmod +x submit.sh')
+    os.system('./submit.sh')
+    os.chdir('../')
 
+  print('===> Created production direcory')
+  print('     {}'.format(prodDir))
