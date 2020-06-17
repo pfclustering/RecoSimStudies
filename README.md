@@ -4,15 +4,6 @@ This is a customised version of https://github.com/bmarzocc/RecoSimStudies
 In this repository, you find all the necessary codes for the production of samples, from the generation to the dumping.
 
 ## Installation
-    * scram project CMSSW_10_6_11
-    * cd CMSSW_10_6_11/src/
-    * cmsenv
-    * git cms-init
-    * git cms-merge-topic bmarzocc:PR_CaloParticles
-    * git cms-merge-topic bmarzocc:PR_ParticleGuns
-    * git cms-merge-topic bmarzocc:10_6_11_DeepSC_noParticleFlow #if you want to reco the deepSCs too 
-    * git clone https://github.com/bmarzocc/RecoSimStudies
-    * scram b -j 5
 
 First installation:
 ```
