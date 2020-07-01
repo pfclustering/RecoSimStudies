@@ -59,6 +59,7 @@ def getOptions():
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
   parser.add_argument('--dosubmit', dest='dosubmit', help='do submission', action='store_true', default=False)
+  parser.add_argument('--dord', dest='dord', help='launch the RecoSimDumperPF instead of the standard RecoSimDumper', action='store_true', default=False)
   parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
   
   return parser.parse_args()
@@ -73,7 +74,7 @@ if __name__ == "__main__":
   #############################
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
-  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else 'Cfg_RecoSimDumper_cfg.py'
+  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else ('Cfg_RecoSimDumperPF_cfg.py' if (opt.ch=='photon' and opt.dord) else 'Cfg_RecoSimDumper_cfg.py')
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   if opt.pfrhmultbelow2p5 == 0:
     pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
