@@ -254,7 +254,7 @@ if __name__ == "__main__":
       rmax = 123.8
       zmin = -304.5
       zmax = 304.5
-      npart = 10
+      npart = 10 if not opt.dord else 3
     elif opt.det == 'EEclose':
       #rmin = 58.0 # eta=2.0
       rmin = 71.1 # eta=2.2
@@ -262,7 +262,7 @@ if __name__ == "__main__":
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
-      npart = 10
+      npart = 10 if not opt.dord else 3
     elif opt.det == 'EEfar':
       rmin = 31.6
       #rmax = 58.0 # eta=2.0
@@ -271,7 +271,7 @@ if __name__ == "__main__":
       rmax = 87.4
       zmin = 317.0
       zmax = 317.0
-      npart = 10
+      npart = 10 if not opt.dord else 3
   
     if opt.npart!=None:
       npart = opt.npart
