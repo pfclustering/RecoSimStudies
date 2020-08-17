@@ -15,7 +15,7 @@ def getOptions():
   parser.add_argument('-l', '--lumi', type=int, dest='lumi', help='integrated luminosity on which ECAL conditions are based, except for PFRH&PFSeeding', default=450, choices=[150,180,235,315,400,450]) 
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
-  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD'])
+  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD', 'overlap'])
   parser.add_argument('--etmax', type=str, dest='etmax', help='max Et (GeV)', default='100')
   parser.add_argument('--etmin', type=str, dest='etmin', help='min Et (GeV)', default='1')
   parser.add_argument('--doflatenergy', dest='doflatenergy', help='generate flat in energy, otherwise in pt', action='store_true', default=False)
@@ -59,7 +59,6 @@ def getOptions():
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
   parser.add_argument('--dosubmit', dest='dosubmit', help='do submission', action='store_true', default=False)
-  parser.add_argument('--dord', dest='dord', help='launch the RecoSimDumperPF instead of the standard RecoSimDumper', action='store_true', default=False)
   parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
   
   return parser.parse_args()
@@ -74,7 +73,7 @@ if __name__ == "__main__":
   #############################
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
-  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else ('Cfg_RecoSimDumperPF_cfg.py' if (opt.ch=='photon' and opt.dord) else 'Cfg_RecoSimDumper_cfg.py')
+  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else ('Cfg_RecoSimDumperPF_cfg.py' if (opt.ch=='overlap') else 'Cfg_RecoSimDumper_cfg.py')
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   if opt.pfrhmultbelow2p5 == 0:
     pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
@@ -248,22 +247,22 @@ if __name__ == "__main__":
   # write the cmsRun commands for all steps
   ############################
   ## step1
-  if opt.geo == 'closeEcal' and opt.ch != 'QCD':
-    if opt.det == 'EB':
+  if opt.ch == 'photon':
+    if opt.det == 'EB' and opt.geo == 'closeEcal':
       rmin = 123.8
       rmax = 123.8
       zmin = -304.5
       zmax = 304.5
-      npart = 10 if not opt.dord else 3
-    elif opt.det == 'EEclose':
+      npart = 10 
+    elif opt.det == 'EEclose' and opt.geo == 'closeEcal':
       #rmin = 58.0 # eta=2.0
       rmin = 71.1 # eta=2.2
       #rmin = 87.4 # eta=2.4
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
-      npart = 10 if not opt.dord else 3
-    elif opt.det == 'EEfar':
+      npart = 10
+    elif opt.det == 'EEfar' and opt.geo == 'closeEcal':
       rmin = 31.6
       #rmax = 58.0 # eta=2.0
       rmax = 71.1 # eta=2.2
@@ -271,13 +270,26 @@ if __name__ == "__main__":
       rmax = 87.4
       zmin = 317.0
       zmax = 317.0
-      npart = 10 if not opt.dord else 3
-  
+      npart = 10 
     if opt.npart!=None:
       npart = opt.npart
 
     step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
+  elif opt.ch == 'overlap':
+    if opt.det == 'EB' and opt.geo == 'closeEcal':
+      rmin = 123.8
+      rmax = 123.8
+      zmin = -304.5
+      zmax = 304.5
+      npart = 10
+      dooverlapping = 1
+      dorandomshoot = 1
+      delta = 2.2 * 10 # at most 6 crystals away
+      deltaphi = 0.01744 * 10 # at most 6 crystals away
+    else: raise RuntimeError('For this channel, only EB is supported')
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} doOverlapping={do} doRandomShoot={drs} delta={de} deltaPhi={ded} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT, do=dooverlapping, drs=dorandomshoot, de=delta, ded=deltaphi)
+    step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage 
   elif opt.ch == 'QCD':
     step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
