@@ -19,7 +19,7 @@ def getOptions():
   parser.add_argument('--etmax', type=str, dest='etmax', help='max Et (GeV)', default='100')
   parser.add_argument('--etmin', type=str, dest='etmin', help='min Et (GeV)', default='1')
   parser.add_argument('--doflatenergy', dest='doflatenergy', help='generate flat in energy, otherwise in pt', action='store_true', default=False)
-  parser.add_argument('--npart', type=int, dest='npart', help='number of particles to generate per event for closeEcal configuration, specify only if you want to override the default', default=None)
+  parser.add_argument('--npart', type=int, dest='npart', help='number of particles to generate per event for closeEcal configuration, default is 10', default=10)
   parser.add_argument('-g','--geo',type=str, dest='geo', help='detector configuration: wTk, noTk, closeEcal', default='closeEcal', choices=['wTk', 'noTk', 'closeEcal'])
   parser.add_argument('-d','--det', type=str, dest='det', help='sub-detector: EB, EEclose, EEfar or all', default='EB', choices=['EB', 'EEclose', 'EEfar', 'all'])
 
@@ -253,7 +253,6 @@ if __name__ == "__main__":
       rmax = 123.8
       zmin = -304.5
       zmax = 304.5
-      npart = 10 
     elif opt.det == 'EEclose' and opt.geo == 'closeEcal':
       #rmin = 58.0 # eta=2.0
       rmin = 71.1 # eta=2.2
@@ -261,7 +260,6 @@ if __name__ == "__main__":
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
-      npart = 10
     elif opt.det == 'EEfar' and opt.geo == 'closeEcal':
       rmin = 31.6
       #rmax = 58.0 # eta=2.0
@@ -270,11 +268,8 @@ if __name__ == "__main__":
       rmax = 87.4
       zmin = 317.0
       zmax = 317.0
-      npart = 10 
-    if opt.npart!=None:
-      npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=opt.npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   elif opt.ch == 'overlap':
     if opt.det == 'EB' and opt.geo == 'closeEcal':
@@ -282,13 +277,12 @@ if __name__ == "__main__":
       rmax = 123.8
       zmin = -304.5
       zmax = 304.5
-      npart = 10
       dooverlapping = 1
       dorandomshoot = 1
-      delta = 2.2 * 10 # at most 6 crystals away
-      deltaphi = 0.01744 * 10 # at most 6 crystals away
+      delta = 2.2 * 10 # at most 10 crystals away
+      deltaphi = 0.01744 * 10 # at most 10 crystals away
     else: raise RuntimeError('For this channel, only EB is supported')
-    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} doOverlapping={do} doRandomShoot={drs} delta={de} deltaPhi={ded} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT, do=dooverlapping, drs=dorandomshoot, de=delta, ded=deltaphi)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} doOverlapping={do} doRandomShoot={drs} delta={de} deltaPhi={ded} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=opt.npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT, do=dooverlapping, drs=dorandomshoot, de=delta, ded=deltaphi)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage 
   elif opt.ch == 'QCD':
     step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, l=opt.lumi, y=yearGT)
