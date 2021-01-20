@@ -107,6 +107,8 @@ After production is over, you can run post-production to create list of files an
 python postProdHelper.py --help
 ```
 
+You can find examples of commands run for past productions in [this spreadsheet](https://docs.google.com/spreadsheets/d/1rJ4FppHxdD6TQpCHnnnX0QD0Y0d4aTEN6ibgTVn7Vyg/edit#gid=0)
+
 ### Dumper
 ```                         
 cd RecoSimStudies/Dumpers/python/
