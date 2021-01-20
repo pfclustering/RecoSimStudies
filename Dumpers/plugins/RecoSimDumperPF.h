@@ -146,6 +146,9 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       edm::EDGetTokenT<EcalRecHitCollection> eeRechitToken_; 
       edm::EDGetTokenT<std::vector<reco::PFRecHit>  > pfRecHitToken_; 
       edm::EDGetTokenT<std::vector<reco::PFCluster> > pfClusterToken_; 
+      edm::EDGetTokenT<std::vector<reco::SuperCluster> > ebSuperClusterToken_;
+      edm::EDGetTokenT<std::vector<reco::SuperCluster> > eeSuperClusterToken_; 
+      edm::EDGetTokenT<CaloTowerCollection> hcalTowersToken_;   
 
       edm::Service<TFileService> iFile;
       const CaloSubdetectorGeometry* _ebGeom;
@@ -155,6 +158,7 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       bool _esMinus;
       
       // ----------config inputs-------------------
+      bool useHcalTowers_;
       bool doCompression_;
       int nBits_;
       bool saveGenParticles_;       
@@ -162,10 +166,16 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       bool saveSimhits_;          
       bool savePFRechits_;   
       bool savePFCluster_;    
-      bool saveShowerShapes_;      
+      bool savePFClusterhits_;   
+      bool saveSuperCluster_;    
+      bool saveShowerShapes_;   
       bool saveScores_;      
       std::string scoreType_;
       std::vector<int> genID_;
+      const CaloTowerCollection* hcalTowersColl;
+      EgammaHadTower* egammaHadTower_;
+      EgammaTowerIsolation* towerIso1_;
+      EgammaTowerIsolation* towerIso2_; 
  
       // ----------histograms & trees & branches-------------------
       TTree* tree;
@@ -231,6 +241,13 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       std::vector<int> pfRecHit_ieta;
       std::vector<int> pfRecHit_iphi;
       std::vector<int> pfRecHit_iz;
+      std::vector<std::vector<float> > pfClusterHit_energy; 
+      std::vector<std::vector<float> > pfClusterHit_rechitEnergy; 
+      std::vector<std::vector<float> > pfClusterHit_eta;
+      std::vector<std::vector<float> > pfClusterHit_phi;
+      std::vector<std::vector<int> > pfClusterHit_ieta;
+      std::vector<std::vector<int> > pfClusterHit_iphi;
+      std::vector<std::vector<int> > pfClusterHit_iz;
       std::vector<float> pfCluster_energy;
       std::vector<float> pfCluster_eta;
       std::vector<float> pfCluster_phi;
@@ -238,6 +255,7 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       std::vector<int> pfCluster_iphi;
       std::vector<int> pfCluster_iz;
       std::vector<int> pfCluster_nXtals;
+      std::vector<std::vector<int> > pfCluster_superClustersIndex;
       std::vector<float> pfCluster_e5x5;
       std::vector<float> pfCluster_e2x2Ratio;
       std::vector<float> pfCluster_e3x3Ratio;
@@ -316,6 +334,61 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       std::vector<std::vector<double> > pfCluster_hgcal_clusterToCalo; 
       std::vector<std::vector<double> > pfCluster_sim_rechit_combined_fraction;
       std::vector<std::vector<double> > pfCluster_rechit_sim_combined_fraction;   
+      std::vector<float> superCluster_energy;
+      std::vector<float> superCluster_eta;
+      std::vector<float> superCluster_phi;  
+      std::vector<float> superCluster_etaWidth;  
+      std::vector<float> superCluster_phiWidth;   
+      std::vector<float> superCluster_R; 
+      std::vector<int> superCluster_nPFClusters;    
+      std::vector<int> superCluster_ieta;
+      std::vector<int> superCluster_iphi;    
+      std::vector<int> superCluster_iz;  
+      std::vector<int> superCluster_seedIndex;
+      std::vector<std::vector<int> > superCluster_pfClustersIndex;
+      std::vector<float> superCluster_e5x5;
+      std::vector<float> superCluster_e2x2Ratio;
+      std::vector<float> superCluster_e3x3Ratio;
+      std::vector<float> superCluster_eMaxRatio;
+      std::vector<float> superCluster_e2ndRatio;
+      std::vector<float> superCluster_eTopRatio;
+      std::vector<float> superCluster_eRightRatio;
+      std::vector<float> superCluster_eBottomRatio;
+      std::vector<float> superCluster_eLeftRatio;
+      std::vector<float> superCluster_e2x5MaxRatio;
+      std::vector<float> superCluster_e2x5TopRatio;
+      std::vector<float> superCluster_e2x5RightRatio;
+      std::vector<float> superCluster_e2x5BottomRatio;
+      std::vector<float> superCluster_e2x5LeftRatio;
+      std::vector<float> superCluster_swissCross;
+      std::vector<float> superCluster_r9;
+      std::vector<float> superCluster_sigmaIetaIeta; 
+      std::vector<float> superCluster_sigmaIetaIphi; 
+      std::vector<float> superCluster_sigmaIphiIphi; 
+      std::vector<float> superCluster_full5x5_e5x5;
+      std::vector<float> superCluster_full5x5_e2x2Ratio;
+      std::vector<float> superCluster_full5x5_e3x3Ratio;
+      std::vector<float> superCluster_full5x5_eMaxRatio;
+      std::vector<float> superCluster_full5x5_e2ndRatio;
+      std::vector<float> superCluster_full5x5_eTopRatio;
+      std::vector<float> superCluster_full5x5_eRightRatio;
+      std::vector<float> superCluster_full5x5_eBottomRatio;
+      std::vector<float> superCluster_full5x5_eLeftRatio;
+      std::vector<float> superCluster_full5x5_e2x5MaxRatio;
+      std::vector<float> superCluster_full5x5_e2x5TopRatio;
+      std::vector<float> superCluster_full5x5_e2x5RightRatio;
+      std::vector<float> superCluster_full5x5_e2x5BottomRatio;
+      std::vector<float> superCluster_full5x5_e2x5LeftRatio;
+      std::vector<float> superCluster_full5x5_swissCross;
+      std::vector<float> superCluster_full5x5_r9;
+      std::vector<float> superCluster_full5x5_sigmaIetaIeta; 
+      std::vector<float> superCluster_full5x5_sigmaIetaIphi; 
+      std::vector<float> superCluster_full5x5_sigmaIphiIphi;      
+      std::vector<float> superCluster_HoEraw; 
+      std::vector<float> superCluster_HoErawBC; 
+      std::vector<std::vector<float> > superCluster_psCluster_energy;
+      std::vector<std::vector<float> > superCluster_psCluster_eta;
+      std::vector<std::vector<float> > superCluster_psCluster_phi;
 
       std::vector<double> dR_genScore;
       std::vector<double> dR_simScore;

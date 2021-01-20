@@ -125,6 +125,10 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
    eeRechitToken_                 = consumes<EcalRecHitCollection>(iConfig.getParameter<edm::InputTag>("eeRechitCollection"));
    pfRecHitToken_                 = consumes<std::vector<reco::PFRecHit> >(iConfig.getParameter<edm::InputTag>("pfRechitCollection")); 
    pfClusterToken_                = consumes<std::vector<reco::PFCluster> >(iConfig.getParameter<edm::InputTag>("pfClusterCollection")); 
+   ebSuperClusterToken_           = consumes<std::vector<reco::SuperCluster> >(iConfig.getParameter<edm::InputTag>("ebSuperClusterCollection"));
+   eeSuperClusterToken_           = consumes<std::vector<reco::SuperCluster> >(iConfig.getParameter<edm::InputTag>("eeSuperClusterCollection"));
+   useHcalTowers_                 = iConfig.getParameter<bool>("useHcalTowers");  
+   hcalTowersToken_               = consumes<CaloTowerCollection>(iConfig.getParameter<edm::InputTag>("hcalTowersCollection"));
    doCompression_                 = iConfig.getParameter<bool>("doCompression");
    nBits_                         = iConfig.getParameter<int>("nBits");
    saveGenParticles_              = iConfig.getParameter<bool>("saveGenParticles");
@@ -132,6 +136,8 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
    saveSimhits_             	  = iConfig.getParameter<bool>("saveSimhits");
    savePFRechits_                 = iConfig.getParameter<bool>("savePFRechits"); 
    savePFCluster_                 = iConfig.getParameter<bool>("savePFCluster");
+   savePFClusterhits_             = iConfig.getParameter<bool>("savePFClusterhits");
+   saveSuperCluster_              = iConfig.getParameter<bool>("saveSuperCluster");
    saveShowerShapes_              = iConfig.getParameter<bool>("saveShowerShapes");
    scoreType_                     = iConfig.getParameter<std::string>("scoreType");
    saveScores_                    = iConfig.getParameter<bool>("saveScores");
@@ -220,6 +226,7 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
       tree->Branch("pfCluster_iphi","std::vector<int>",&pfCluster_iphi);   
       tree->Branch("pfCluster_iz","std::vector<int>",&pfCluster_iz);
       tree->Branch("pfCluster_nXtals","std::vector<int>",&pfCluster_nXtals);  
+      if(saveSuperCluster_) tree->Branch("pfCluster_superClustersIndex","std::vector<std::vector<int> >",&pfCluster_superClustersIndex); 
       if(saveCaloParticles_){ 
          tree->Branch("pfCluster_dR_genScore_MatchedIndex","std::vector<int>",&pfCluster_dR_genScore_MatchedIndex);
          tree->Branch("pfCluster_dR_simScore_MatchedIndex","std::vector<int>",&pfCluster_dR_simScore_MatchedIndex);
@@ -268,6 +275,32 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
             tree->Branch("pfCluster_rechit_sim_combined_fraction","std::vector<std::vector<double> >",&pfCluster_rechit_sim_combined_fraction);   
          }
       }
+      if(savePFClusterhits_){ 
+         tree->Branch("pfClusterHit_energy","std::vector<std::vector<float> >",&pfClusterHit_energy);
+         tree->Branch("pfClusterHit_rechitEnergy","std::vector<std::vector<float> >",&pfClusterHit_rechitEnergy);
+         tree->Branch("pfClusterHit_eta","std::vector<std::vector<float> >",&pfClusterHit_eta);
+         tree->Branch("pfClusterHit_phi","std::vector<std::vector<float> >",&pfClusterHit_phi);
+         tree->Branch("pfClusterHit_ieta","std::vector<std::vector<int> >",&pfClusterHit_ieta);
+         tree->Branch("pfClusterHit_iphi","std::vector<std::vector<int> >",&pfClusterHit_iphi);
+         tree->Branch("pfClusterHit_iz","std::vector<std::vector<int> >",&pfClusterHit_iz);
+      }   
+   }
+   if(saveSuperCluster_){
+      tree->Branch("superCluster_energy","std::vector<float> ",&superCluster_energy);
+      tree->Branch("superCluster_eta","std::vector<float>",&superCluster_eta);
+      tree->Branch("superCluster_phi","std::vector<float>",&superCluster_phi);  
+      tree->Branch("superCluster_etaWidth","std::vector<float>",&superCluster_etaWidth);
+      tree->Branch("superCluster_phiWidth","std::vector<float>",&superCluster_phiWidth);  
+      tree->Branch("superCluster_R","std::vector<float>",&superCluster_R);   
+      tree->Branch("superCluster_nPFClusters","std::vector<int>",&superCluster_nPFClusters);   
+      tree->Branch("superCluster_ieta","std::vector<int>",&superCluster_ieta);
+      tree->Branch("superCluster_iphi","std::vector<int>",&superCluster_iphi);  
+      tree->Branch("superCluster_iz","std::vector<int>",&superCluster_iz);    
+      if(savePFCluster_) tree->Branch("superCluster_seedIndex","std::vector<int>",&superCluster_seedIndex);     
+      if(savePFCluster_) tree->Branch("superCluster_pfClustersIndex","std::vector<std::vector<int> >",&superCluster_pfClustersIndex); 
+      tree->Branch("superCluster_psCluster_energy", "std::vector<std::vector<float> >", &superCluster_psCluster_energy);
+      tree->Branch("superCluster_psCluster_eta", "std::vector<std::vector<float> >", &superCluster_psCluster_eta);
+      tree->Branch("superCluster_psCluster_phi", "std::vector<std::vector<float> >", &superCluster_psCluster_phi); 
    }
    if(savePFCluster_ && saveShowerShapes_){  
       tree->Branch("pfCluster_e5x5","std::vector<float>",&pfCluster_e5x5);
@@ -308,6 +341,50 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
       tree->Branch("pfCluster_full5x5_sigmaIetaIeta","std::vector<float>",&pfCluster_full5x5_sigmaIetaIeta);
       tree->Branch("pfCluster_full5x5_sigmaIetaIphi","std::vector<float>",&pfCluster_full5x5_sigmaIetaIphi);
       tree->Branch("pfCluster_full5x5_sigmaIphiIphi","std::vector<float>",&pfCluster_full5x5_sigmaIphiIphi);
+   }
+   if(saveSuperCluster_ && saveShowerShapes_){  
+      tree->Branch("superCluster_e5x5","std::vector<float>",&superCluster_e5x5);
+      tree->Branch("superCluster_e2x2Ratio","std::vector<float>",&superCluster_e2x2Ratio);
+      tree->Branch("superCluster_e3x3Ratio","std::vector<float>",&superCluster_e3x3Ratio);
+      tree->Branch("superCluster_eMaxRatio","std::vector<float>",&superCluster_eMaxRatio);
+      tree->Branch("superCluster_e2ndRatio","std::vector<float>",&superCluster_e2ndRatio);
+      tree->Branch("superCluster_eTopRatio","std::vector<float>",&superCluster_eTopRatio);
+      tree->Branch("superCluster_eRightRatio","std::vector<float>",&superCluster_eRightRatio);
+      tree->Branch("superCluster_eBottomRatio","std::vector<float>",&superCluster_eBottomRatio);
+      tree->Branch("superCluster_eLeftRatio","std::vector<float>",&superCluster_eLeftRatio);
+      tree->Branch("superCluster_e2x5MaxRatio","std::vector<float>",&superCluster_e2x5MaxRatio);
+      tree->Branch("superCluster_e2x5TopRatio","std::vector<float>",&superCluster_e2x5TopRatio);
+      tree->Branch("superCluster_e2x5RightRatio","std::vector<float>",&superCluster_e2x5RightRatio);
+      tree->Branch("superCluster_e2x5BottomRatio","std::vector<float>",&superCluster_e2x5BottomRatio); 
+      tree->Branch("superCluster_e2x5LeftRatio","std::vector<float>",&superCluster_e2x5LeftRatio); 
+      tree->Branch("superCluster_swissCross","std::vector<float>",&superCluster_swissCross); 
+      tree->Branch("superCluster_r9","std::vector<float>",&superCluster_r9);
+      tree->Branch("superCluster_sigmaIetaIeta","std::vector<float>",&superCluster_sigmaIetaIeta);
+      tree->Branch("superCluster_sigmaIetaIphi","std::vector<float>",&superCluster_sigmaIetaIphi);
+      tree->Branch("superCluster_sigmaIphiIphi","std::vector<float>",&superCluster_sigmaIphiIphi);
+      tree->Branch("superCluster_full5x5_e5x5","std::vector<float>",&superCluster_full5x5_e5x5);
+      tree->Branch("superCluster_full5x5_e2x2Ratio","std::vector<float>",&superCluster_full5x5_e2x2Ratio);
+      tree->Branch("superCluster_full5x5_e3x3Ratio","std::vector<float>",&superCluster_full5x5_e3x3Ratio);
+      tree->Branch("superCluster_full5x5_eMaxRatio","std::vector<float>",&superCluster_full5x5_eMaxRatio);
+      tree->Branch("superCluster_full5x5_e2ndRatio","std::vector<float>",&superCluster_full5x5_e2ndRatio);
+      tree->Branch("superCluster_full5x5_eTopRatio","std::vector<float>",&superCluster_full5x5_eTopRatio);
+      tree->Branch("superCluster_full5x5_eRightRatio","std::vector<float>",&superCluster_full5x5_eRightRatio);
+      tree->Branch("superCluster_full5x5_eBottomRatio","std::vector<float>",&superCluster_full5x5_eBottomRatio);
+      tree->Branch("superCluster_full5x5_eLeftRatio","std::vector<float>",&superCluster_full5x5_eLeftRatio);
+      tree->Branch("superCluster_full5x5_e2x5MaxRatio","std::vector<float>",&superCluster_full5x5_e2x5MaxRatio);
+      tree->Branch("superCluster_full5x5_e2x5TopRatio","std::vector<float>",&superCluster_full5x5_e2x5TopRatio);
+      tree->Branch("superCluster_full5x5_e2x5RightRatio","std::vector<float>",&superCluster_full5x5_e2x5RightRatio);
+      tree->Branch("superCluster_full5x5_e2x5BottomRatio","std::vector<float>",&superCluster_full5x5_e2x5BottomRatio); 
+      tree->Branch("superCluster_full5x5_e2x5LeftRatio","std::vector<float>",&superCluster_full5x5_e2x5LeftRatio); 
+      tree->Branch("superCluster_full5x5_swissCross","std::vector<float>",&superCluster_full5x5_swissCross); 
+      tree->Branch("superCluster_full5x5_r9","std::vector<float>",&superCluster_full5x5_r9);
+      tree->Branch("superCluster_full5x5_sigmaIetaIeta","std::vector<float>",&superCluster_full5x5_sigmaIetaIeta);
+      tree->Branch("superCluster_full5x5_sigmaIetaIphi","std::vector<float>",&superCluster_full5x5_sigmaIetaIphi);
+      tree->Branch("superCluster_full5x5_sigmaIphiIphi","std::vector<float>",&superCluster_full5x5_sigmaIphiIphi);
+      if(useHcalTowers_ ){
+         tree->Branch("superCluster_HoEraw","std::vector<float>",&superCluster_HoEraw);
+         tree->Branch("superCluster_HoErawBC","std::vector<float>",&superCluster_HoErawBC);
+        }
    }
 }
 
@@ -375,21 +452,18 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
 
    edm::Handle<EcalRecHitCollection> recHitsEB;
    ev.getByToken(ebRechitToken_, recHitsEB);
-   //if(saveRechits_) {
-      if (!recHitsEB.isValid()) {
-          std::cerr << "Analyze --> recHitsEB not found" << std::endl; 
-          return;
-      }
-   //}
+   if (!recHitsEB.isValid()) {
+       std::cerr << "Analyze --> recHitsEB not found" << std::endl; 
+       return;
+   }
+
 
    edm::Handle<EcalRecHitCollection> recHitsEE;
    ev.getByToken(eeRechitToken_, recHitsEE);
-   //if(saveRechits_) {
-      if (!recHitsEE.isValid()) {
-          std::cerr << "Analyze --> recHitsEE not found" << std::endl; 
-          return;
-      }
-   //} 
+   if (!recHitsEE.isValid()) {
+        std::cerr << "Analyze --> recHitsEE not found" << std::endl; 
+        return;
+   }
 
    edm::Handle<std::vector<reco::PFRecHit> > pfRecHits;
    ev.getByToken(pfRecHitToken_, pfRecHits);
@@ -409,7 +483,38 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
       }
    } 
 
+   edm::Handle<std::vector<reco::SuperCluster> > superClusterEB;
+   ev.getByToken(ebSuperClusterToken_, superClusterEB);
+   if(saveSuperCluster_) {
+      if (!superClusterEB.isValid()) {
+          std::cerr << "Analyze --> superClusterEB not found" << std::endl; 
+          return;
+      }
+   } 
 
+   edm::Handle<std::vector<reco::SuperCluster> > superClusterEE;
+   ev.getByToken(eeSuperClusterToken_, superClusterEE);
+   if(saveSuperCluster_) {
+      if (!superClusterEE.isValid()) {
+          std::cerr << "Analyze --> superClusterEE not found" << std::endl; 
+          return;
+      }
+   }
+
+   //compute EgammaTowers;
+   Handle<CaloTowerCollection> hcalTowers;
+   ev.getByToken(hcalTowersToken_, hcalTowers);
+   if(useHcalTowers_){
+      if (!hcalTowers.isValid()) {
+          std::cerr << "Analyze --> hcalTowers not found" << std::endl; 
+          return;
+      } 
+      //hcalTowersColl = hcalTowers.product();
+      towerIso1_ = new EgammaTowerIsolation(0.15, 0., 0., 1, hcalTowers.product());
+      towerIso2_ = new EgammaTowerIsolation(0.15, 0., 0., 2, hcalTowers.product());
+      egammaHadTower_ = new EgammaHadTower(iSetup);
+      egammaHadTower_->setTowerCollection(hcalTowers.product()); 
+   } 
 
    runId = ev.id().run();
    lumiId = ev.luminosityBlock();
@@ -544,12 +649,6 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
    simHit_iphi.clear();
    simHit_iz.clear();
    simHit_icP.clear();
-//   simHit_energy.resize(nCaloParticles);
-//   simHit_eta.resize(nCaloParticles);
-//   simHit_phi.resize(nCaloParticles);
-//   simHit_ieta.resize(nCaloParticles);
-//   simHit_iphi.resize(nCaloParticles);
-//   simHit_iz.resize(nCaloParticles);
 
    pfRecHit_energy.clear();
    pfRecHit_eta.clear();
@@ -565,6 +664,7 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
    pfCluster_ieta.clear();
    pfCluster_iphi.clear();
    pfCluster_iz.clear();
+   pfCluster_superClustersIndex.clear();
    pfCluster_e5x5.clear();
    pfCluster_e2x2Ratio.clear();
    pfCluster_e3x3Ratio.clear();
@@ -663,7 +763,76 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
    pfCluster_hgcal_clusterToCalo.resize(nPFClusters);  
    pfCluster_sim_rechit_combined_fraction.resize(nPFClusters);   
    pfCluster_rechit_sim_combined_fraction.resize(nPFClusters);  
- 
+   pfCluster_superClustersIndex.resize(nPFClusters); 
+
+   pfClusterHit_energy.clear();
+   pfClusterHit_rechitEnergy.clear();
+   pfClusterHit_eta.clear();
+   pfClusterHit_phi.clear();   
+   pfClusterHit_ieta.clear();
+   pfClusterHit_iphi.clear(); 
+   pfClusterHit_iz.clear();           
+   pfClusterHit_energy.resize(nPFClusters);  
+   pfClusterHit_rechitEnergy.resize(nPFClusters);  
+   pfClusterHit_eta.resize(nPFClusters);  
+   pfClusterHit_phi.resize(nPFClusters);     
+   pfClusterHit_ieta.resize(nPFClusters);  
+   pfClusterHit_iphi.resize(nPFClusters);   
+   pfClusterHit_iz.resize(nPFClusters);   
+  
+   superCluster_energy.clear(); 
+   superCluster_eta.clear(); 
+   superCluster_phi.clear();  
+   superCluster_etaWidth.clear();     
+   superCluster_phiWidth.clear(); 
+   superCluster_R.clear(); 
+   superCluster_nPFClusters.clear(); 
+   superCluster_ieta.clear(); 
+   superCluster_iphi.clear();
+   superCluster_iz.clear(); 
+   superCluster_seedIndex.clear(); 
+   superCluster_pfClustersIndex.clear(); 
+   superCluster_e5x5.clear();
+   superCluster_e2x2Ratio.clear();
+   superCluster_e3x3Ratio.clear();
+   superCluster_eMaxRatio.clear();
+   superCluster_e2ndRatio.clear();
+   superCluster_eTopRatio.clear();
+   superCluster_eRightRatio.clear();
+   superCluster_eBottomRatio.clear();
+   superCluster_eLeftRatio.clear();
+   superCluster_e2x5MaxRatio.clear();
+   superCluster_e2x5TopRatio.clear();
+   superCluster_e2x5RightRatio.clear();
+   superCluster_e2x5BottomRatio.clear();
+   superCluster_e2x5LeftRatio.clear();
+   superCluster_swissCross.clear();
+   superCluster_r9.clear();
+   superCluster_sigmaIetaIeta.clear(); 
+   superCluster_sigmaIetaIphi.clear(); 
+   superCluster_sigmaIphiIphi.clear(); 
+   superCluster_full5x5_e5x5.clear();
+   superCluster_full5x5_e2x2Ratio.clear();
+   superCluster_full5x5_e3x3Ratio.clear();
+   superCluster_full5x5_eMaxRatio.clear();
+   superCluster_full5x5_e2ndRatio.clear();
+   superCluster_full5x5_eTopRatio.clear();
+   superCluster_full5x5_eRightRatio.clear();
+   superCluster_full5x5_eBottomRatio.clear();
+   superCluster_full5x5_eLeftRatio.clear();
+   superCluster_full5x5_e2x5MaxRatio.clear();
+   superCluster_full5x5_e2x5TopRatio.clear();
+   superCluster_full5x5_e2x5RightRatio.clear();
+   superCluster_full5x5_e2x5BottomRatio.clear();
+   superCluster_full5x5_e2x5LeftRatio.clear();
+   superCluster_full5x5_swissCross.clear();
+   superCluster_full5x5_r9.clear();
+   superCluster_full5x5_sigmaIetaIeta.clear(); 
+   superCluster_full5x5_sigmaIetaIphi.clear(); 
+   superCluster_full5x5_sigmaIphiIphi.clear();    
+   int nSuperClusters = (superClusterEB.product())->size() + (superClusterEE.product())->size();
+   superCluster_seedIndex.resize(nSuperClusters); 
+   superCluster_pfClustersIndex.resize(nSuperClusters);
    hitsAndEnergies_CaloPart.clear();
    hitsAndEnergies_CaloPart_1MeVCut.clear();
    hitsAndEnergies_CaloPart_5MeVCut.clear();
@@ -962,7 +1131,33 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
              pfCluster_full5x5_sigmaIetaIphi.push_back(reduceFloat(showerShapes_[36],nBits_)); 
              pfCluster_full5x5_sigmaIphiIphi.push_back(reduceFloat(showerShapes_[37],nBits_)); 
           }  
-           
+          
+          if(savePFClusterhits_){
+             //for save PFClusterHit      
+             for(unsigned int i = 0; i < hitsAndEnergies_PFCluster.at(iPFCl).size(); i++){      
+                 cell = geometry->getPosition(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first);
+                 pfClusterHit_energy[iPFCl].push_back(reduceFloat(hitsAndEnergies_PFCluster.at(iPFCl).at(i).second,nBits_));
+                 pfClusterHit_eta[iPFCl].push_back(reduceFloat(cell.eta(),nBits_));
+                 pfClusterHit_phi[iPFCl].push_back(reduceFloat(cell.phi(),nBits_));
+                 if(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first.subdetId()==EcalBarrel){ 
+                    EBDetId eb_id(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first); 
+                    pfClusterHit_rechitEnergy[iPFCl].push_back(reduceFloat((*(recHitsEB.product())->find(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first)).energy(),nBits_)); 
+                    pfClusterHit_ieta[iPFCl].push_back(eb_id.ieta());
+                    pfClusterHit_iphi[iPFCl].push_back(eb_id.iphi());
+                    pfClusterHit_iz[iPFCl].push_back(0); 
+                 }else if(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first.subdetId()==EcalEndcap){  
+                    int iz=-99;
+                    EEDetId ee_id(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first);  
+                    pfClusterHit_rechitEnergy[iPFCl].push_back(reduceFloat((*(recHitsEE.product())->find(hitsAndEnergies_PFCluster.at(iPFCl).at(i).first)).energy(),nBits_)); 
+                    pfClusterHit_ieta[iPFCl].push_back(ee_id.ix());
+                    pfClusterHit_iphi[iPFCl].push_back(ee_id.iy());
+                    if(ee_id.zside()<0) iz=-1;
+                    if(ee_id.zside()>0) iz=1;   
+                    pfClusterHit_iz[iPFCl].push_back(iz); 
+                 } 
+             }
+          }
+
           //compute scores     
           if(saveGenParticles_){
              for(unsigned int iGen=0; iGen<genParts.size(); iGen++){
@@ -1110,7 +1305,198 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
       }      
    } 
    
+   //Save SuperClusters 
+   locCov_.clear();
+   full5x5_locCov_.clear();
+   if(saveSuperCluster_){
+      int iSC=0;
+      //std::cout << "SuperClustersEB size: " << (superClusterEB.product())->size() << std::endl;
+      for(const auto& iSuperCluster : *(superClusterEB.product())){  
 
+          superCluster_energy.push_back(reduceFloat(iSuperCluster.rawEnergy(),nBits_));
+          superCluster_eta.push_back(reduceFloat(iSuperCluster.eta(),nBits_));
+          superCluster_phi.push_back(reduceFloat(iSuperCluster.phi(),nBits_));
+          superCluster_etaWidth.push_back(reduceFloat(iSuperCluster.etaWidth(),nBits_));
+          superCluster_phiWidth.push_back(reduceFloat(iSuperCluster.phiWidth(),nBits_));
+          superCluster_R.push_back(reduceFloat(iSuperCluster.position().R(),nBits_));
+          superCluster_nPFClusters.push_back(iSuperCluster.clusters().size());
+          math::XYZPoint caloPos = iSuperCluster.seed()->position();
+          EBDetId eb_id(_ebGeom->getClosestCell(GlobalPoint(caloPos.x(),caloPos.y(),caloPos.z())));  
+          superCluster_ieta.push_back(eb_id.ieta());
+          superCluster_iphi.push_back(eb_id.iphi());
+          superCluster_iz.push_back(0);   
+ 
+          if(saveShowerShapes_){
+             reco::CaloCluster caloBC(*iSuperCluster.seed());  
+             showerShapes_.clear();
+             showerShapes_ = getShowerShapes(&caloBC, &(*(recHitsEB.product())), topology);  
+             superCluster_e5x5.push_back(reduceFloat(showerShapes_[0],nBits_));
+             superCluster_e2x2Ratio.push_back(reduceFloat(showerShapes_[1],nBits_));
+             superCluster_e3x3Ratio.push_back(reduceFloat(showerShapes_[2],nBits_));
+      	     superCluster_eMaxRatio.push_back(reduceFloat(showerShapes_[3],nBits_));
+             superCluster_e2ndRatio.push_back(reduceFloat(showerShapes_[4],nBits_));
+             superCluster_eTopRatio.push_back(reduceFloat(showerShapes_[5],nBits_));
+             superCluster_eRightRatio.push_back(reduceFloat(showerShapes_[6],nBits_));
+             superCluster_eBottomRatio.push_back(reduceFloat(showerShapes_[7],nBits_));
+             superCluster_eLeftRatio.push_back(reduceFloat(showerShapes_[8],nBits_));
+             superCluster_e2x5MaxRatio.push_back(reduceFloat(showerShapes_[9],nBits_));
+             superCluster_e2x5TopRatio.push_back(reduceFloat(showerShapes_[10],nBits_));
+             superCluster_e2x5RightRatio.push_back(reduceFloat(showerShapes_[11],nBits_));
+             superCluster_e2x5BottomRatio.push_back(reduceFloat(showerShapes_[12],nBits_));
+             superCluster_e2x5LeftRatio.push_back(reduceFloat(showerShapes_[13],nBits_));
+             superCluster_swissCross.push_back(reduceFloat(showerShapes_[14],nBits_));
+             superCluster_r9.push_back(reduceFloat(showerShapes_[2]*showerShapes_[0]/iSuperCluster.rawEnergy(),nBits_));
+             superCluster_sigmaIetaIeta.push_back(reduceFloat(showerShapes_[16],nBits_)); 
+             superCluster_sigmaIetaIphi.push_back(reduceFloat(showerShapes_[17],nBits_)); 
+             superCluster_sigmaIphiIphi.push_back(reduceFloat(showerShapes_[18],nBits_)); 
+             superCluster_full5x5_e5x5.push_back(reduceFloat(showerShapes_[19],nBits_));
+             superCluster_full5x5_e2x2Ratio.push_back(reduceFloat(showerShapes_[20],nBits_));
+             superCluster_full5x5_e3x3Ratio.push_back(reduceFloat(showerShapes_[21],nBits_));
+             superCluster_full5x5_eMaxRatio.push_back(reduceFloat(showerShapes_[22],nBits_));
+             superCluster_full5x5_e2ndRatio.push_back(reduceFloat(showerShapes_[23],nBits_));
+             superCluster_full5x5_eTopRatio.push_back(reduceFloat(showerShapes_[24],nBits_));
+             superCluster_full5x5_eRightRatio.push_back(reduceFloat(showerShapes_[25],nBits_));
+             superCluster_full5x5_eBottomRatio.push_back(reduceFloat(showerShapes_[26],nBits_));
+             superCluster_full5x5_eLeftRatio.push_back(reduceFloat(showerShapes_[27],nBits_));
+             superCluster_full5x5_e2x5MaxRatio.push_back(reduceFloat(showerShapes_[28],nBits_));
+             superCluster_full5x5_e2x5TopRatio.push_back(reduceFloat(showerShapes_[29],nBits_));
+             superCluster_full5x5_e2x5RightRatio.push_back(reduceFloat(showerShapes_[30],nBits_));
+             superCluster_full5x5_e2x5BottomRatio.push_back(reduceFloat(showerShapes_[31],nBits_));
+             superCluster_full5x5_e2x5LeftRatio.push_back(reduceFloat(showerShapes_[32],nBits_));
+             superCluster_full5x5_swissCross.push_back(reduceFloat(showerShapes_[33],nBits_));
+             superCluster_full5x5_r9.push_back(reduceFloat(showerShapes_[21]*showerShapes_[19]/iSuperCluster.rawEnergy(),nBits_));
+             superCluster_full5x5_sigmaIetaIeta.push_back(reduceFloat(showerShapes_[35],nBits_)); 
+             superCluster_full5x5_sigmaIetaIphi.push_back(reduceFloat(showerShapes_[36],nBits_)); 
+             superCluster_full5x5_sigmaIphiIphi.push_back(reduceFloat(showerShapes_[37],nBits_)); 
+
+             HoEs_.clear();
+             HoEs_ = getHoE(&iSuperCluster, towerIso1_, towerIso2_, egammaHadTower_);
+             superCluster_HoEraw.push_back(reduceFloat(HoEs_[0],nBits_)); 
+             superCluster_HoErawBC.push_back(reduceFloat(HoEs_[1],nBits_)); 
+          } 
+         
+          
+          if(savePFCluster_){   
+             //save clusters and superClusters mutual info
+             reco::CaloCluster caloSeed(*iSuperCluster.seed());  
+             for(reco::CaloCluster_iterator iBC = iSuperCluster.clustersBegin(); iBC != iSuperCluster.clustersEnd(); ++iBC){
+                 reco::CaloCluster caloSCluster(*(*iBC)); 
+                 int iPF=0;   
+                 for(const auto& iPFCluster : *(pfClusters.product())){
+                     reco::CaloCluster caloPFCluster(iPFCluster);
+                     if(caloPFCluster == caloSCluster) superCluster_pfClustersIndex[iSC].push_back(iPF); 
+                     if(caloPFCluster == caloSCluster && caloSCluster == caloSeed) superCluster_seedIndex[iSC]=iPF;   
+                     iPF++;   
+                 }     
+             }      
+          }
+          iSC++;  
+      } // for superCluseterEB
+
+      // The global SuperCluster indexing for EE has an offset = nSuperClusterEB
+      iSC = (superClusterEB.product())->size();
+      int iSC_tmp=-1;
+      //std::cout << "SuperClustersEE size: " << (superClusterEE.product())->size() << std::endl;
+
+      for(const auto& iSuperCluster : *(superClusterEE.product())){    
+
+          iSC_tmp++;
+        
+          superCluster_energy.push_back(reduceFloat(iSuperCluster.rawEnergy(),nBits_));
+          superCluster_eta.push_back(reduceFloat(iSuperCluster.eta(),nBits_));
+          superCluster_phi.push_back(reduceFloat(iSuperCluster.phi(),nBits_));
+          superCluster_etaWidth.push_back(reduceFloat(iSuperCluster.etaWidth(),nBits_));
+          superCluster_phiWidth.push_back(reduceFloat(iSuperCluster.phiWidth(),nBits_));
+          superCluster_R.push_back(reduceFloat(iSuperCluster.position().R(),nBits_)); 
+          superCluster_nPFClusters.push_back(iSuperCluster.clusters().size());  
+          math::XYZPoint caloPos = iSuperCluster.seed()->position(); 
+          EEDetId ee_id(_eeGeom->getClosestCell(GlobalPoint(caloPos.x(),caloPos.y(),caloPos.z())));   
+          superCluster_ieta.push_back(ee_id.ix());
+          superCluster_iphi.push_back(ee_id.iy());
+          superCluster_iz.push_back(ee_id.zside());   
+
+          if(saveShowerShapes_){ 
+             reco::CaloCluster caloBC(*iSuperCluster.seed());  
+             showerShapes_.clear();
+             showerShapes_ = getShowerShapes(&caloBC, &(*(recHitsEE.product())), topology);  
+             superCluster_e5x5.push_back(reduceFloat(showerShapes_[0],nBits_));
+             superCluster_e2x2Ratio.push_back(reduceFloat(showerShapes_[1],nBits_));
+             superCluster_e3x3Ratio.push_back(reduceFloat(showerShapes_[2],nBits_));
+      	     superCluster_eMaxRatio.push_back(reduceFloat(showerShapes_[3],nBits_));
+             superCluster_e2ndRatio.push_back(reduceFloat(showerShapes_[4],nBits_));
+             superCluster_eTopRatio.push_back(reduceFloat(showerShapes_[5],nBits_));
+             superCluster_eRightRatio.push_back(reduceFloat(showerShapes_[6],nBits_));
+             superCluster_eBottomRatio.push_back(reduceFloat(showerShapes_[7],nBits_));
+             superCluster_eLeftRatio.push_back(reduceFloat(showerShapes_[8],nBits_));
+             superCluster_e2x5MaxRatio.push_back(reduceFloat(showerShapes_[9],nBits_));
+             superCluster_e2x5TopRatio.push_back(reduceFloat(showerShapes_[10],nBits_));
+             superCluster_e2x5RightRatio.push_back(reduceFloat(showerShapes_[11],nBits_));
+             superCluster_e2x5BottomRatio.push_back(reduceFloat(showerShapes_[12],nBits_));
+             superCluster_e2x5LeftRatio.push_back(reduceFloat(showerShapes_[13],nBits_));
+             superCluster_swissCross.push_back(reduceFloat(showerShapes_[14],nBits_));
+             superCluster_r9.push_back(reduceFloat(showerShapes_[2]*showerShapes_[0]/iSuperCluster.rawEnergy(),nBits_));
+             superCluster_sigmaIetaIeta.push_back(reduceFloat(showerShapes_[16],nBits_)); 
+             superCluster_sigmaIetaIphi.push_back(reduceFloat(showerShapes_[17],nBits_)); 
+             superCluster_sigmaIphiIphi.push_back(reduceFloat(showerShapes_[18],nBits_)); 
+             superCluster_full5x5_e5x5.push_back(reduceFloat(showerShapes_[19],nBits_));
+             superCluster_full5x5_e2x2Ratio.push_back(reduceFloat(showerShapes_[20],nBits_));
+             superCluster_full5x5_e3x3Ratio.push_back(reduceFloat(showerShapes_[21],nBits_));
+             superCluster_full5x5_eMaxRatio.push_back(reduceFloat(showerShapes_[22],nBits_));
+             superCluster_full5x5_e2ndRatio.push_back(reduceFloat(showerShapes_[23],nBits_));
+             superCluster_full5x5_eTopRatio.push_back(reduceFloat(showerShapes_[24],nBits_));
+             superCluster_full5x5_eRightRatio.push_back(reduceFloat(showerShapes_[25],nBits_));
+             superCluster_full5x5_eBottomRatio.push_back(reduceFloat(showerShapes_[26],nBits_));
+             superCluster_full5x5_eLeftRatio.push_back(reduceFloat(showerShapes_[27],nBits_));
+             superCluster_full5x5_e2x5MaxRatio.push_back(reduceFloat(showerShapes_[28],nBits_));
+             superCluster_full5x5_e2x5TopRatio.push_back(reduceFloat(showerShapes_[29],nBits_));
+             superCluster_full5x5_e2x5RightRatio.push_back(reduceFloat(showerShapes_[30],nBits_));
+             superCluster_full5x5_e2x5BottomRatio.push_back(reduceFloat(showerShapes_[31],nBits_));
+             superCluster_full5x5_e2x5LeftRatio.push_back(reduceFloat(showerShapes_[32],nBits_));
+             superCluster_full5x5_swissCross.push_back(reduceFloat(showerShapes_[33],nBits_));
+             superCluster_full5x5_r9.push_back(reduceFloat(showerShapes_[21]*showerShapes_[19]/iSuperCluster.rawEnergy(),nBits_));
+             superCluster_full5x5_sigmaIetaIeta.push_back(reduceFloat(showerShapes_[35],nBits_)); 
+             superCluster_full5x5_sigmaIetaIphi.push_back(reduceFloat(showerShapes_[36],nBits_)); 
+             superCluster_full5x5_sigmaIphiIphi.push_back(reduceFloat(showerShapes_[37],nBits_)); 
+
+             HoEs_.clear();
+             HoEs_ = getHoE(&iSuperCluster, towerIso1_, towerIso2_, egammaHadTower_);
+             superCluster_HoEraw.push_back(reduceFloat(HoEs_[0],nBits_)); 
+             superCluster_HoErawBC.push_back(reduceFloat(HoEs_[1],nBits_)); 
+          }
+
+          
+          if(iSuperCluster.preshowerClusters().isAvailable()){
+              for(unsigned int iPC=0; iPC<iSuperCluster.preshowerClusters().size(); iPC++){
+                  if(!iSuperCluster.preshowerClusters()[iPC].isAvailable()) { continue; } 
+                  superCluster_psCluster_energy[iSC_tmp].push_back(reduceFloat(iSuperCluster.preshowerClusters()[iPC]->energy(),nBits_));
+                  superCluster_psCluster_eta[iSC_tmp].push_back(reduceFloat(iSuperCluster.preshowerClusters()[iPC]->eta(),nBits_));
+                  superCluster_psCluster_phi[iSC_tmp].push_back(reduceFloat(iSuperCluster.preshowerClusters()[iPC]->phi(),nBits_));   
+              }
+          } 
+
+          if(savePFCluster_){   
+             //save clusters and superClusters mutual info
+             reco::CaloCluster caloSeed(*iSuperCluster.seed());  
+             for(reco::CaloCluster_iterator iBC = iSuperCluster.clustersBegin(); iBC != iSuperCluster.clustersEnd(); ++iBC){
+                 reco::CaloCluster caloSCluster(*(*iBC));  
+                 int iPF=0;   
+                 for(const auto& iPFCluster : *(pfClusters.product())){
+                     reco::CaloCluster caloPFCluster(iPFCluster);
+                     if(caloPFCluster == caloSCluster) superCluster_pfClustersIndex[iSC].push_back(iPF); 
+                     if(caloPFCluster == caloSCluster && caloSCluster == caloSeed) superCluster_seedIndex[iSC]=iPF;   
+                     iPF++;   
+                 }     
+             }      
+          }
+          iSC++;  
+      } // end for superCLustesEE
+   }
+   //save pfCluster_superClustersIndex
+   if(savePFCluster_ && saveSuperCluster_){
+      for(unsigned int iSC=0; iSC<superCluster_pfClustersIndex.size(); iSC++)
+          for(unsigned int iPF=0; iPF<superCluster_pfClustersIndex.at(iSC).size(); iPF++)
+              if(superCluster_pfClustersIndex[iSC].at(iPF)>=0) pfCluster_superClustersIndex[superCluster_pfClustersIndex[iSC].at(iPF)].push_back(iSC);   
+    }
    //fill tree for each event
    tree->Fill();
 }
@@ -1196,6 +1582,22 @@ std::vector<float> RecoSimDumperPF::getShowerShapes(reco::CaloCluster* caloBC, c
     shapes[37] = !edm::isFinite(full5x5_locCov_[2]) ? 0. : sqrt(full5x5_locCov_[2]); // sigmaIphiIphi 
 
     return shapes; 
+}
+
+std::vector<float> RecoSimDumperPF::getHoE(const reco::SuperCluster* iSuperCluster, EgammaTowerIsolation* towerIso1, EgammaTowerIsolation* towerIso2, const EgammaHadTower* egammaHadTower)
+{
+     std::vector<float> HoEs;
+     HoEs.resize(2);
+  
+     std::vector<CaloTowerDetId> towersBehindCluster = egammaHadTower->towersOf(*iSuperCluster);
+     double HoEraw1 = towerIso1->getTowerESum(iSuperCluster)/iSuperCluster->rawEnergy();
+     double HoEraw2 = towerIso2->getTowerESum(iSuperCluster)/iSuperCluster->rawEnergy();        
+     float HoEraw1bc = egammaHadTower->getDepth1HcalESum(towersBehindCluster)/iSuperCluster->energy();
+     float HoEraw2bc = egammaHadTower->getDepth2HcalESum(towersBehindCluster)/iSuperCluster->energy(); 
+     HoEs[0] = HoEraw1 + HoEraw2;
+     HoEs[1] = HoEraw1bc + HoEraw2bc;
+     
+     return HoEs;
 }
 
 std::vector<std::pair<DetId, float> >* RecoSimDumperPF::getHitsAndEnergiesCaloPart(CaloParticle* iCaloParticle, float simHitEnergy_cut)
