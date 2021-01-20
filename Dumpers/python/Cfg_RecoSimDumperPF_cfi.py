@@ -15,6 +15,10 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumperPF",
     eeRechitCollection                = cms.InputTag("ecalRecHit","EcalRecHitsEE","RECO"),
     pfRechitCollection                = cms.InputTag("particleFlowRecHitECAL","","RECO"),
     pfClusterCollection               = cms.InputTag("particleFlowClusterECAL","","RECO"),
+    ebSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALBarrel","RECO"), 
+    eeSuperClusterCollection          = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower","RECO"), 
+    useHcalTowers                   = cms.bool(False),  #compute HoE
+    hcalTowersCollection            = cms.InputTag("towerMaker"), #compute HoE
     
     doCompression                     = cms.bool(True),  #do the compression of floats
     nBits                             = cms.int32(23),   #nbits for float compression (<=23)
@@ -22,10 +26,12 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumperPF",
     saveGenParticles                  = cms.bool(True),  #save genParticles information   
     saveCaloParticles                 = cms.bool(True),  #save caloParticles information
     saveSimhits                       = cms.bool(True),  #save simHits information
-    savePFRechits                     = cms.bool(True),  #save pfRecHits information
+    saveEBPFRechits                   = cms.bool(True),  #save pfRecHits information
     savePFCluster                     = cms.bool(True),  #save pfClusters information
+    savePFClusterhits                 = cms.bool(True),  #save pfClustershits information
     saveShowerShapes                  = cms.bool(False),  #save showerShapes information
     saveScores                        = cms.bool(False),  #save scores information
+    saveSuperCluster                  = cms.bool(False),
     scoreType                         = cms.string("sim_fraction"),  #score to be used for caloParticle matching
     genID                             = cms.vint32(22,11, -11,), #save only caloParticles with this pdgId 
 )
