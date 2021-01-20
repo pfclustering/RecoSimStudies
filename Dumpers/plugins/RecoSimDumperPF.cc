@@ -134,7 +134,7 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
    saveGenParticles_              = iConfig.getParameter<bool>("saveGenParticles");
    saveCaloParticles_             = iConfig.getParameter<bool>("saveCaloParticles");
    saveSimhits_             	  = iConfig.getParameter<bool>("saveSimhits");
-   savePFRechits_                 = iConfig.getParameter<bool>("savePFRechits"); 
+   saveEBPFRechits_               = iConfig.getParameter<bool>("saveEBPFRechits"); 
    savePFCluster_                 = iConfig.getParameter<bool>("savePFCluster");
    savePFClusterhits_             = iConfig.getParameter<bool>("savePFClusterhits");
    saveSuperCluster_              = iConfig.getParameter<bool>("saveSuperCluster");
@@ -210,7 +210,7 @@ RecoSimDumperPF::RecoSimDumperPF(const edm::ParameterSet& iConfig)
       tree->Branch("simHit_iz","std::vector<int>",&simHit_iz);
       tree->Branch("simHit_icP","std::vector<int>",&simHit_icP);
    }
-   if(savePFRechits_){ 
+   if(saveEBPFRechits_){ 
       tree->Branch("pfRecHit_energy","std::vector<float>",&pfRecHit_energy);
       tree->Branch("pfRecHit_eta","std::vector<float>",&pfRecHit_eta); 
       tree->Branch("pfRecHit_phi","std::vector<float>",&pfRecHit_phi);
@@ -467,7 +467,7 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
 
    edm::Handle<std::vector<reco::PFRecHit> > pfRecHits;
    ev.getByToken(pfRecHitToken_, pfRecHits);
-   if(savePFRechits_) {
+   if(saveEBPFRechits_) {
       if (!pfRecHits.isValid()) {
           std::cerr << "Analyze --> pfRecHits not found" << std::endl; 
           return;
@@ -972,7 +972,7 @@ void RecoSimDumperPF::analyze(const edm::Event& ev, const edm::EventSetup& iSetu
    }
   
    // Save all EB PFRechits
-   if(savePFRechits_){
+   if(saveEBPFRechits_){
      for(const auto& iPFRechit : *(pfRecHits.product())){
 
        DetId pf_id(iPFRechit.detId());
