@@ -23,9 +23,9 @@ git cms-merge-topic bmarzocc:PR_CaloParticles
 git cms-merge-topic bmarzocc:PR_EcalPFSeedingThresholds
 git cms-merge-topic bmarzocc:PR_ParticleGuns
 ```
-or:
+or (if you also want to run an overlap study):
 ```
-git cms-merge-topic mgratti:mg-flatenergyproducer
+git cms-merge-topic mgratti:mg-PR_ParticleGuns
 ```
 
 ```
