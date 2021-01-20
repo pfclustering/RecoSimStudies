@@ -38,6 +38,7 @@ recosimdumper = cms.EDAnalyzer("RecoSimDumper",
     saveSimhits                       = cms.bool(True),  #save simHits information
     saveRechits                       = cms.bool(True),  #save recHits information
     savePFRechits                     = cms.bool(True),  #save pfRecHits information
+    saveEBPFRechits                   = cms.bool(False),  
     savePFCluster                     = cms.bool(True),  #save pfClusters information
     savePFClusterhits                 = cms.bool(True),  #save pfClustershits information
     saveSuperCluster                  = cms.bool(False),  #save superClusters information
