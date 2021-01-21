@@ -23,9 +23,9 @@ git cms-merge-topic bmarzocc:PR_CaloParticles
 git cms-merge-topic bmarzocc:PR_EcalPFSeedingThresholds
 git cms-merge-topic bmarzocc:PR_ParticleGuns
 ```
-or:
+or (if you also want to run an overlap study):
 ```
-git cms-merge-topic mgratti:mg-flatenergyproducer
+git cms-merge-topic mgratti:mg-PR_ParticleGuns
 ```
 
 ```
@@ -106,6 +106,8 @@ After production is over, you can run post-production to create list of files an
 ```
 python postProdHelper.py --help
 ```
+
+You can find examples of commands run for past productions in [this spreadsheet](https://docs.google.com/spreadsheets/d/1rJ4FppHxdD6TQpCHnnnX0QD0Y0d4aTEN6ibgTVn7Vyg/edit#gid=0)
 
 ### Dumper
 ```                         

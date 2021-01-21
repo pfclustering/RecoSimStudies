@@ -179,6 +179,7 @@ class RecoSimDumper : public edm::EDAnalyzer
       bool saveSimhits_;          
       bool saveRechits_;          
       bool savePFRechits_;   
+      bool saveEBPFRechits_;   
       bool savePFCluster_;    
       bool savePFClusterhits_;   
       bool saveSuperCluster_;     
@@ -280,7 +281,13 @@ class RecoSimDumper : public edm::EDAnalyzer
       std::vector<int> pfRecHit_unClustered_ieta;
       std::vector<int> pfRecHit_unClustered_iphi;
       std::vector<int> pfRecHit_unClustered_iz;
-      std::vector<std::vector<float> > pfClusterHit_fraction; 
+      std::vector<float> pfRecHit_energy;
+      std::vector<float> pfRecHit_eta;
+      std::vector<float> pfRecHit_phi;
+      std::vector<int> pfRecHit_ieta;
+      std::vector<int> pfRecHit_iphi;
+      std::vector<int> pfRecHit_iz;
+      std::vector<std::vector<float> > pfClusterHit_energy; 
       std::vector<std::vector<float> > pfClusterHit_rechitEnergy; 
       std::vector<std::vector<float> > pfClusterHit_eta;
       std::vector<std::vector<float> > pfClusterHit_phi;

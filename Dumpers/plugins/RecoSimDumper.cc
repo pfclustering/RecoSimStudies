@@ -146,6 +146,7 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
    saveSimhits_             	  = iConfig.getParameter<bool>("saveSimhits");
    saveRechits_                   = iConfig.getParameter<bool>("saveRechits");
    savePFRechits_                 = iConfig.getParameter<bool>("savePFRechits"); 
+   saveEBPFRechits_               = iConfig.getParameter<bool>("saveEBPFRechits"); 
    savePFCluster_                 = iConfig.getParameter<bool>("savePFCluster");
    savePFClusterhits_             = iConfig.getParameter<bool>("savePFClusterhits");
    saveSuperCluster_              = iConfig.getParameter<bool>("saveSuperCluster");
@@ -253,6 +254,14 @@ RecoSimDumper::RecoSimDumper(const edm::ParameterSet& iConfig)
       tree->Branch("pfRecHit_unClustered_ieta","std::vector<int>",&pfRecHit_unClustered_ieta); 
       tree->Branch("pfRecHit_unClustered_iphi","std::vector<int>",&pfRecHit_unClustered_iphi);
       tree->Branch("pfRecHit_unClustered_iz","std::vector<int>",&pfRecHit_unClustered_iz);     
+   }
+   if(saveEBPFRechits_){ 
+      tree->Branch("pfRecHit_energy","std::vector<float>",&pfRecHit_energy);
+      tree->Branch("pfRecHit_eta","std::vector<float>",&pfRecHit_eta); 
+      tree->Branch("pfRecHit_phi","std::vector<float>",&pfRecHit_phi);
+      tree->Branch("pfRecHit_ieta","std::vector<int>",&pfRecHit_ieta); 
+      tree->Branch("pfRecHit_iphi","std::vector<int>",&pfRecHit_iphi);
+      tree->Branch("pfRecHit_iz","std::vector<int>",&pfRecHit_iz);     
    }
    if(savePFCluster_){
       tree->Branch("pfCluster_rawEnergy","std::vector<float>",&pfCluster_rawEnergy);
@@ -654,7 +663,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<EcalRecHitCollection> recHitsEB;
-   if(saveRechits_) {  
+   if(saveRechits_ || saveShowerShapes_) {
       ev.getByToken(ebRechitToken_, recHitsEB);
       if (!recHitsEB.isValid()) {
           std::cerr << "Analyze --> recHitsEB not found" << std::endl; 
@@ -663,7 +672,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<EcalRecHitCollection> recHitsEE;
-   if(saveRechits_) {
+   if(saveRechits_ || saveShowerShapes_) {
       ev.getByToken(eeRechitToken_, recHitsEE);
       if (!recHitsEE.isValid()) {
           std::cerr << "Analyze --> recHitsEE not found" << std::endl; 
@@ -672,7 +681,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::PFRecHit> > pfRecHits;
-   if(savePFRechits_) {
+   if(savePFRechits_ || saveEBPFRechits_) {
       ev.getByToken(pfRecHitToken_, pfRecHits);
       if (!pfRecHits.isValid()) {
           std::cerr << "Analyze --> pfRecHits not found" << std::endl; 
@@ -982,6 +991,13 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    pfRecHit_unClustered_ieta.clear();
    pfRecHit_unClustered_iphi.clear();
    pfRecHit_unClustered_iz.clear();
+
+   pfRecHit_energy.clear();
+   pfRecHit_eta.clear();
+   pfRecHit_phi.clear();
+   pfRecHit_ieta.clear();
+   pfRecHit_iphi.clear();
+   pfRecHit_iz.clear();
 
    int nPFClusters = (pfClusters.product())->size();
    pfCluster_rawEnergy.clear();
@@ -1462,7 +1478,35 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
        } 
        caloParticle_simEnergy.push_back(reduceFloat(calo_simEnergy,nBits_));
    }
-   
+  
+   // Save all PFRechits
+   if(saveEBPFRechits_){
+     for(const auto& iPFRechit : *(pfRecHits.product())){
+
+       DetId pf_id(iPFRechit.detId());
+       //pfRechit.push_back(pf_id); 
+       cell = geometry->getPosition(pf_id); 
+       if(pf_id.subdetId()==EcalBarrel){ 
+          pfRecHit_energy.push_back(reduceFloat(iPFRechit.energy(),nBits_));    
+          pfRecHit_eta.push_back(reduceFloat(cell.eta(),nBits_));  
+          pfRecHit_phi.push_back(reduceFloat(cell.phi(),nBits_)); 
+          EBDetId eb_id(pf_id);  
+          pfRecHit_ieta.push_back(eb_id.ieta());  
+          pfRecHit_iphi.push_back(eb_id.iphi());  
+          pfRecHit_iz.push_back(0);     
+       }
+       /*else if(pf_id.subdetId()==EcalEndcap){
+          int iz=-99;
+          EEDetId ee_id(pf_id);  
+          if(ee_id.zside()<0) iz=-1;
+          if(ee_id.zside()>0) iz=1; 
+          pfRecHit_ieta.push_back(ee_id.ix());  
+          pfRecHit_iphi.push_back(ee_id.iy());  
+          pfRecHit_iz.push_back(iz);    
+       }*/ 
+     } 
+   }
+
    //Save PFClusters 
    if(savePFCluster_){
       
