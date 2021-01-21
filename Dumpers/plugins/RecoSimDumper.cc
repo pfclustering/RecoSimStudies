@@ -1055,8 +1055,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<EcalRecHitCollection> recHitsEB;
-   ev.getByToken(ebRechitToken_, recHitsEB);
    if(saveRechits_ || saveShowerShapes_) {
+      ev.getByToken(ebRechitToken_, recHitsEB);
       if (!recHitsEB.isValid()) {
           std::cerr << "Analyze --> recHitsEB not found" << std::endl; 
           return;
@@ -1064,8 +1064,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<EcalRecHitCollection> recHitsEE;
-   ev.getByToken(eeRechitToken_, recHitsEE);
    if(saveRechits_ || saveShowerShapes_) {
+      ev.getByToken(eeRechitToken_, recHitsEE);
       if (!recHitsEE.isValid()) {
           std::cerr << "Analyze --> recHitsEE not found" << std::endl; 
           return;
@@ -1073,8 +1073,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::PFRecHit> > pfRecHits;
-   ev.getByToken(pfRecHitToken_, pfRecHits);
    if(savePFRechits_ || saveEBPFRechits_) {
+      ev.getByToken(pfRecHitToken_, pfRecHits);
       if (!pfRecHits.isValid()) {
           std::cerr << "Analyze --> pfRecHits not found" << std::endl; 
           return;
@@ -1082,8 +1082,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::PFCluster> > pfClusters;
-   ev.getByToken(pfClusterToken_, pfClusters);
    if(savePFCluster_) {
+      ev.getByToken(pfClusterToken_, pfClusters);
       if (!pfClusters.isValid()) {
           std::cerr << "Analyze --> pfClusters not found" << std::endl; 
           return;
@@ -1091,8 +1091,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > superClusterEB;
-   ev.getByToken(ebSuperClusterToken_, superClusterEB);
    if(saveSuperCluster_) {
+      ev.getByToken(ebSuperClusterToken_, superClusterEB);
       if (!superClusterEB.isValid()) {
           std::cerr << "Analyze --> superClusterEB not found" << std::endl; 
           return;
@@ -1100,8 +1100,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::SuperCluster> > superClusterEE;
-   ev.getByToken(eeSuperClusterToken_, superClusterEE);
    if(saveSuperCluster_) {
+      ev.getByToken(eeSuperClusterToken_, superClusterEE);
       if (!superClusterEE.isValid()) {
           std::cerr << "Analyze --> superClusterEE not found" << std::endl; 
           return;
@@ -1182,8 +1182,8 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 
    //compute EgammaTowers;
    Handle<CaloTowerCollection> hcalTowers;
-   ev.getByToken(hcalTowersToken_, hcalTowers);
    if(useHcalTowers_){
+      ev.getByToken(hcalTowersToken_, hcalTowers);
       if (!hcalTowers.isValid()) {
           std::cerr << "Analyze --> hcalTowers not found" << std::endl; 
           return;
