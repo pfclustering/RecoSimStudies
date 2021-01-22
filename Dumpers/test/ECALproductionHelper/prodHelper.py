@@ -12,20 +12,20 @@ def getOptions():
 
   parser.add_argument('-v','--ver', type=str, dest='ver', help='version of production, e.g. V00_v00', default='V00_v00')
   #parser.add_argument('-r','--rel', type=str, dest='rel', help='cmssw release', default='10_6_1_patch1')
-  parser.add_argument('-y', '--year', type=int, dest='year', help='year, defined conditions of CMS', default=2021, choices=[2021,2023])
+  parser.add_argument('-l', '--lumi', type=int, dest='lumi', help='integrated luminosity on which ECAL conditions are based, except for PFRH&PFSeeding', default=450, choices=[150,180,235,315,400,450]) 
 
   parser.add_argument('-n','--nevts', type=int, dest='nevts', help='total number of events to be generated', default=10)
-  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD'])
+  parser.add_argument('-c','--ch', type=str, dest='ch', help='channel, e.g. photon', default='photon', choices=['photon', 'gjetEM', 'QCD', 'overlap'])
   parser.add_argument('--etmax', type=str, dest='etmax', help='max Et (GeV)', default='100')
   parser.add_argument('--etmin', type=str, dest='etmin', help='min Et (GeV)', default='1')
   parser.add_argument('--doflatenergy', dest='doflatenergy', help='generate flat in energy, otherwise in pt', action='store_true', default=False)
-  parser.add_argument('--npart', type=int, dest='npart', help='number of particles to generate per event for closeEcal configuration, specify only if you want to override the default', default=None)
+  parser.add_argument('--npart', type=int, dest='npart', help='number of particles to generate per event for closeEcal configuration, default is 10', default=10)
   parser.add_argument('-g','--geo',type=str, dest='geo', help='detector configuration: wTk, noTk, closeEcal', default='closeEcal', choices=['wTk', 'noTk', 'closeEcal'])
   parser.add_argument('-d','--det', type=str, dest='det', help='sub-detector: EB, EEclose, EEfar or all', default='EB', choices=['EB', 'EEclose', 'EEfar', 'all'])
 
   parser.add_argument('--pu', type=str, dest='pu', help='PU configuration', default='noPU', choices=['noPU', 'wPU'])
 
-  parser.add_argument('--noisecond', type=int, dest='noisecond', help='which noise conditions do you want', default=2023)
+  parser.add_argument('--thrslumi', type=int, dest='thrslumi', help='based on which integrated luminosity were the thrs computed', default=450, choices=[2021, 2023, 150, 180, 235, 315, 400, 450, 550])
   parser.add_argument('--pfrhmult', type=float, dest='pfrhmult', help='how many sigma of the noise to use for PFRH thresholds', default=1.)
   parser.add_argument('--pfrhmultbelow2p5', type=float, dest='pfrhmultbelow2p5', help='sigma of the noise for PFRH thresholds for |eta|<2.5', default=0.)
   parser.add_argument('--pfrhmultabove2p5', type=float, dest='pfrhmultabove2p5', help='sigma of the noise for PFRH thresholds for |eta|>2.5', default=0.)
@@ -58,8 +58,8 @@ def getOptions():
   parser.add_argument('--dosavehome', dest='dosavehome', help='save in home, otherwise save to SE', action='store_true', default=False)
   parser.add_argument('--doskipdumper', dest='doskipdumper', help='do not run the dumper at the end', action='store_true', default=False)
   parser.add_argument('--dodumperonly', dest='dodumperonly', help='only run the dumper', action='store_true', default=False)
+  parser.add_argument('--dosubmit', dest='dosubmit', help='do submission', action='store_true', default=False)
   parser.add_argument('--pli', type=str, dest='pli', help='full production label of input', default=None)
-  parser.add_argument('--dodefaultecaltags', dest='dodefaultecaltags', help='use default ECAL tags in GT, except for PFRH tag', action='store_true', default=False)
   
   return parser.parse_args()
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
   #############################
   user = os.environ["USER"]
   evar = 'E' if opt.doflatenergy else 'Et'
-  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else 'Cfg_RecoSimDumper_cfg.py'
+  dumpcfg = 'Cfg_RecoSimDumper_gjets_cfg.py' if opt.ch=='gjetEM' else ('Cfg_RecoSimDumperPF_cfg.py' if (opt.ch=='overlap') else 'Cfg_RecoSimDumper_cfg.py')
   etRange='{}{}to{}GeV'.format(evar,opt.etmin,opt.etmax)
   if opt.pfrhmultbelow2p5 == 0:
     pfrhLabel= opt.pfrhmult if not opt.dorefpfrh else 'Ref'
@@ -102,29 +102,36 @@ if __name__ == "__main__":
   thrLabel = thrLabelEB + thrLabelEE
   safetyLabel = 'noMargin' if not opt.dosafetymargin else 'wMargin'
   if opt.ch != 'QCD':
-    prodLabel='{c}_{e}_{g}_{d}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{e}_{g}_{d}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_{mr}_thr{thr}_shs{shs}_maxd{md}_l{l}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,mr=safetyLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,l=opt.lumi,v=opt.ver,n=opt.nevts)
   else:
-    prodLabel='{c}_{pu}_noiseCond{nsc}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_y{y}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,nsc=opt.noisecond,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,y=opt.year,v=opt.ver,n=opt.nevts)
+    prodLabel='{c}_{pu}_thrsLumi{thl}_pfrh{pf}_seed{s}_thr{thr}_shs{shs}_maxd{md}_l{l}_{v}_n{n}'.format(c=opt.ch,e=etRange,g=opt.geo,d=opt.det,pu=opt.pu,thl=opt.thrslumi,pf=pfrhLabel,s=seedLabel,thr=thrLabel,shs=opt.showersigmamult,md=opt.maxsigmadist,l=opt.lumi,v=opt.ver,n=opt.nevts)
   prodLabelIn = prodLabel if opt.pli==None else opt.pli # prod label of input for postProduction , can be different from output production label
   dopu = 1 if opt.pu=='wPU' else 0
-  # force the noise conditions to be of 2021 for reference thresholds
+  # force the noise conditions to be of TL180 for reference thresholds
   if opt.dorefpfrh and opt.dorefseed:
-    noisecnd = '2021'
+    thrlumi = '180'
   else:
-    noisecnd = opt.noisecond
+    thrlumi = opt.thrslumi
+  print 'lumiThrs: {a}'.format(a=thrlumi)  
+  # set the year to choose the global tag, this will decide the detector conditions other than ECAL
+  if (opt.lumi == 150 or opt.lumi== 180 or opt.lumi == 235):
+    yearGT=2021
+  elif (opt.lumi == 400 or opt.lumi == 450):
+    yearGT=2023 
+  else:
+    raise RuntimeError('year for GT is not valid, please check')
   doringavgEB = 1 if opt.doringavgEB else 0
   doringavgEE = 1 if opt.doringavgEE else 0
   dosafetymargin = 1 if opt.dosafetymargin else 0
   dorefpfrh = 1 if opt.dorefpfrh else 0
   dorefseed = 1 if opt.dorefseed else 0
-  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_{}.txt'.format(noisecnd))) \
-     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_{}.txt'.format(noisecnd))) \
-     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_{}.txt'.format(noisecnd))) \
-     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_{}.txt'.format(noisecnd))): 
+  if    (    opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_ringaveraged_TL{}.txt'.format(thrlumi))) \
+     or (    opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_ringaveraged_TL{}.txt'.format(thrlumi))) \
+     or (not opt.doringavgEB and not os.path.isfile('../../data/noise/PFRecHitThresholds_EB_TL{}.txt'.format(thrlumi))) \
+     or (not opt.doringavgEE and not os.path.isfile('../../data/noise/PFRecHitThresholds_EE_TL{}.txt'.format(thrlumi))): 
   #   or (opt.dorefseed       and ( not os.path.isfile('fixed_SeedingThresholds_EB.txt')  or not os.path.isfile('fixed_SeedingThresholds_EE.txt') ) ) :
     raise RuntimeError('file with input thresholds not available, please check')
   doflatenergy = 1 if opt.doflatenergy else 0
-  dodefaultecaltags = 1 if opt.dodefaultecaltags else 0
   nthr = 8 if opt.domultithread else 1
   if opt.domultijob and opt.njobs <= 1: raise RuntimeError('when running multiple jobs, the number of parallel jobs should be larger than 1')
   if opt.domultijob and opt.nevts % opt.njobs != 0 and not opt.dorecofromeos: raise RuntimeError('cannot split events in njobs evenly, please change njobs / nevts')
@@ -240,22 +247,20 @@ if __name__ == "__main__":
   # write the cmsRun commands for all steps
   ############################
   ## step1
-  if opt.geo == 'closeEcal' and opt.ch != 'QCD':
-    if opt.det == 'EB':
+  if opt.ch == 'photon':
+    if opt.det == 'EB' and opt.geo == 'closeEcal':
       rmin = 123.8
       rmax = 123.8
       zmin = -304.5
       zmax = 304.5
-      npart = 10
-    elif opt.det == 'EEclose':
+    elif opt.det == 'EEclose' and opt.geo == 'closeEcal':
       #rmin = 58.0 # eta=2.0
       rmin = 71.1 # eta=2.2
       #rmin = 87.4 # eta=2.4
       rmax = 171.1
       zmin = 317.0
       zmax = 317.0
-      npart = 10
-    elif opt.det == 'EEfar':
+    elif opt.det == 'EEfar' and opt.geo == 'closeEcal':
       rmin = 31.6
       #rmax = 58.0 # eta=2.0
       rmax = 71.1 # eta=2.2
@@ -263,15 +268,24 @@ if __name__ == "__main__":
       rmax = 87.4
       zmin = 317.0
       zmax = 317.0
-      npart = 10
-  
-    if opt.npart!=None:
-      npart = opt.npart
 
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=npart, nt=nthr, dfe=doflatenergy, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=opt.npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
+  elif opt.ch == 'overlap':
+    if opt.det == 'EB' and opt.geo == 'closeEcal':
+      rmin = 123.8
+      rmax = 123.8
+      zmin = -304.5
+      zmax = 304.5
+      dooverlapping = 1
+      dorandomshoot = 1
+      delta = 2.2 * 10 # at most 10 crystals away
+      deltaphi = 0.01744 * 10 # at most 10 crystals away
+    else: raise RuntimeError('For this channel, only EB is supported')
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} etmin={etmin} etmax={etmax} rmin={r1} rmax={r2} zmin={z1} zmax={z2} np={np} nThr={nt} doFlatEnergy={dfe} doOverlapping={do} doRandomShoot={drs} delta={de} deltaPhi={ded} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, etmin=float(opt.etmin), etmax=float(opt.etmax), r1=rmin, r2=rmax, z1=zmin, z2=zmax, np=opt.npart, nt=nthr, dfe=doflatenergy, l=opt.lumi, y=yearGT, do=dooverlapping, drs=dorandomshoot, de=delta, ded=deltaphi)
+    step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage 
   elif opt.ch == 'QCD':
-    step1_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+    step1_cmsRun = 'cmsRun {jo} yearGT={y} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[0], n=nevtsjob, nt=nthr, l=opt.lumi, y=yearGT)
     step1_cmsRun_add = 'seedOffset={nj}' # format at a later stage
   elif opt.doreco:
     step1_cmsRun = 'dummy'
@@ -279,7 +293,7 @@ if __name__ == "__main__":
   else:
     raise RuntimeError('this option is not currently supported')
   ## step2  
-  step2_cmsRun = 'cmsRun {jo} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[1], nt=nthr, y=opt.year, ddet=dodefaultecaltags)
+  step2_cmsRun = 'cmsRun {jo} yearGT={y} nThr={nt} lumi={l}'.format(jo=target_drivers[1], nt=nthr, l=opt.lumi, y=yearGT)
   step2_cmsRun_add = ('nPremixFiles={npf}'.format(npf=npremixfiles) if dopu else '') + (' randomizePremix=1' if opt.domultijob and dopu else ' ')
   ## step3
   if opt.ch != 'QCD':
@@ -288,11 +302,11 @@ if __name__ == "__main__":
   else:
     dorecofile=0
     dominiaodfile=1
-  step3_cmsRun = 'cmsRun {jo} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} noiseCond={nsc} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} year={y} doDefaultECALtags={ddet} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, nsc=noisecnd, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, y=opt.year, ddet=dodefaultecaltags, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob)
+  step3_cmsRun = 'cmsRun {jo} yearGT={y} dorecofile={reco} dominiaodfile={miniaod} pfrhMultbelow2p5={pfrhmb} pfrhMultabove2p5={pfrhma} seedMultbelow2p5={smb} seedMultabove2p5={sma} nThr={nt} thrsLumi={thl} doRefPfrh={drpf} doRefSeed={drsd} doSafetyMargin={mr} doPU={dp} doRingAverageEB={draeb} doRingAverageEE={draee} lumi={l} showerSigmaMult={shs} maxSigmaDist={md} maxEvents={n}'.format(jo=target_drivers[2], reco=dorecofile, miniaod=dominiaodfile, pfrhmb=pfrhMultbelow2p5, pfrhma=pfrhMultabove2p5, smb=seedMultbelow2p5, sma=seedMultabove2p5, nt=nthr, thl=thrlumi, drpf=dorefpfrh, drsd=dorefseed, mr=dosafetymargin, dp=dopu, draeb=doringavgEB, draee=doringavgEE, l=opt.lumi, shs=opt.showersigmamult, md=opt.maxsigmadist, n=nevtsjob, y=yearGT)
   cmsRuns = [step1_cmsRun, step2_cmsRun, step3_cmsRun]
   cmsRuns_add = [step1_cmsRun_add, step2_cmsRun_add, '']
   if opt.ch == 'QCD':
-    step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} year={y} doDefaultECALtags={ddet}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, y=opt.year, ddet=dodefaultecaltags) 
+    step4_cmsRun = 'cmsRun {jo} maxEvents={n} nThr={nt} lumi={l}'.format(jo=target_drivers[3], n=nevtsjob, nt=nthr, l=opt.lumi, ddet=dodefaultecaltags) 
     cmsRuns.append(step4_cmsRun)
     cmsRuns_add.append('')  
   
@@ -547,16 +561,16 @@ if __name__ == "__main__":
     postprod_dependencies = '--dependency=afterany'
     for nj in range(0,njobs):
 
-      sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
+      sbatch_command_step1 = 'jid1_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step1_nj{nj}.log -e logs/step1_nj{nj}.log --job-name=step1_{pl} {t} --ntasks={nt} --mem 2500 launch_step1_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[0],nt=nthr)
 
-      sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
+      sbatch_command_step2 = 'jid2_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step2_nj{nj}.log -e logs/step2_nj{nj}.log --job-name=step2_{pl} {t} --ntasks={nt} --mem 2000 --dependency=afterany:$jid1_nj{nj} launch_step2_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[1],nt=nthr)
 
-      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+      sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --mem 4000 --dependency=afterany:$jid2_nj{nj} launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
       if opt.doreco: # strip the dependency away
-        sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt}  launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
+        sbatch_command_step3 = 'jid3_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step3_nj{nj}.log -e logs/step3_nj{nj}.log --job-name=step3_{pl} {t} --ntasks={nt} --mem 4000 launch_step3_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[2],nt=nthr)
    
       if opt.ch == 'QCD':  
-        sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
+        sbatch_command_step4 = 'jid4_nj{nj}=$(sbatch -p wn --account=t3 -o logs/step4_nj{nj}.log -e logs/step4_nj{nj}.log --job-name=step4_{pl} {t} --ntasks={nt} --mem 4000 --dependency=afterany:$jid3_nj{nj} launch_step4_nj{nj}.sh)'.format(nj=nj,pl=prodLabel,t=sbatch_times[3],nt=nthr)
 
       postprod_dependencies += ':$jid3_nj{nj}'.format(nj=nj)
 
@@ -587,7 +601,7 @@ if __name__ == "__main__":
     dumper_dependencies = ':$jid_pp'
     # dumper
     for njd in range(0, opt.splitfactord):
-      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[4],dd=dumper_dependencies)
+      sbatch_command_dumper = 'jid_njd{njd}=$(sbatch -p wn --mem 4000 --account=t3 -o logs/dumper_njd{njd}.log -e logs/dumper_njd{njd}.log --job-name=dumper_{pl} {t} --ntasks=1 --dependency=afterany{dd} launch_dumper_njd{njd}.sh)'.format(njd=njd,pl=prodLabel,t=sbatch_times[4],dd=dumper_dependencies)
       submitter_template.append(sbatch_command_dumper)
       submitter_template.append('echo "$jid_njd%i"' % njd)
       submitter_template.append('jid_njd%i=${jid_njd%i#"Submitted batch job "}' % (njd,njd))
@@ -600,4 +614,12 @@ if __name__ == "__main__":
   with open(submitterFile, 'w') as f:
     f.write(submitter_template)
 
+  # submit
+  if opt.dosubmit:
+    os.chdir(prodDir)
+    os.system('chmod +x submit.sh')
+    os.system('./submit.sh')
+    os.chdir('../')
 
+  print('===> Created production direcory')
+  print('     {}'.format(prodDir))
