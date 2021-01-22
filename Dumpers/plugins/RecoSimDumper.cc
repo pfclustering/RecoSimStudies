@@ -663,6 +663,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    }
 
    edm::Handle<EcalRecHitCollection> recHitsEB;
+
    if(saveRechits_ || saveShowerShapes_) {
       ev.getByToken(ebRechitToken_, recHitsEB);
       if (!recHitsEB.isValid()) {
@@ -681,7 +682,7 @@ void RecoSimDumper::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
    } 
 
    edm::Handle<std::vector<reco::PFRecHit> > pfRecHits;
-   if(savePFRechits_ || saveEBPFRechits_) {
+   if(savePFRechits_) {
       ev.getByToken(pfRecHitToken_, pfRecHits);
       if (!pfRecHits.isValid()) {
           std::cerr << "Analyze --> pfRecHits not found" << std::endl; 
