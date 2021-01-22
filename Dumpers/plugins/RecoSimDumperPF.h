@@ -165,6 +165,7 @@ class RecoSimDumperPF : public edm::EDAnalyzer
       bool saveCaloParticles_;    
       bool saveSimhits_;          
       bool savePFRechits_;   
+      bool saveEBPFRechits_;   
       bool savePFCluster_;    
       bool savePFClusterhits_;   
       bool saveSuperCluster_;    
